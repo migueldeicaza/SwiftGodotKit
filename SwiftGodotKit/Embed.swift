@@ -11,6 +11,7 @@ import libgodot
 // Callbacks that the user provides
 var loadSceneCb: ((SceneTree) -> ())?
 var loadProjectSettingsCb: ((ProjectSettings)->())?
+var initHookCb: ((GDExtension.InitializationLevel) -> ())?
 
 func projectSettingsBind (_ x: UnsafeMutableRawPointer?) {
     if let cb = loadProjectSettingsCb, let ptr = x {
@@ -25,7 +26,10 @@ func sceneBind (_ startup: UnsafeMutableRawPointer?) {
 }
 
 func embeddedExtensionInit (userData: UnsafeMutableRawPointer?, l: GDExtensionInitializationLevel) {
-    print ("SwiftEmbed: Register our types here")
+    print ("SwiftEmbed: Register our types here, level: \(l)")
+    if let cb = initHookCb {
+        cb (GDExtension.InitializationLevel(rawValue: Int (l.rawValue))!)
+    }
 }
 
 func embeddedExtensionDeinit (userData: UnsafeMutableRawPointer?, l: GDExtensionInitializationLevel) {
@@ -72,14 +76,26 @@ func withUnsafePtr (strings: [String], callback: (UnsafeMutablePointer<UnsafeMut
     cStringArray.deallocate()
 }
 
-/// Starts godot with the specified parameters
-public func runGodot (args: [String], loadScene: @escaping (SceneTree)->(), loadProjectSettings: @escaping (ProjectSettings)->(), verbose: Bool = false) {
+/// Starts godot with the specified parameters.
+///
+/// This calls first `initHook()` once Godot has initialized, here you can register
+/// types and perform other initialization tasks.   Then `loadProjectSettings` is
+/// called with an instance of ProjectSettings, and finally, your `loadScene` is called
+///
+/// - Parameters:
+///  - args: arguments to pass to Godot
+///  - initHook: call to prepare anything before Godot runs, types and others
+///  - loadScene: called to load your initial scene
+///  - loadProjectSettings: callback to configure your project settings
+///  - verbose: whether to show additional logging information.
+public func runGodot (args: [String], initHook: @escaping (GDExtension.InitializationLevel) -> (), loadScene: @escaping (SceneTree)->(), loadProjectSettings: @escaping (ProjectSettings)->(), verbose: Bool = false) {
     guard loadSceneCb == nil else {
         print ("runGodot was already invoked")
         return
     }
     loadSceneCb = loadScene
     loadProjectSettingsCb = loadProjectSettings
+    initHookCb = initHook
     
     libgodot_bind(initBind, sceneBind, projectSettingsBind)
     var copy = args
@@ -90,7 +106,4 @@ public func runGodot (args: [String], loadScene: @escaping (SceneTree)->(), load
     withUnsafePtr(strings: copy) { ptr in
         godot_main (Int32 (copy.count), ptr)
     }
-    
-    // Remember to free the memory when you're done with the pointer
-    
 }

@@ -13,15 +13,15 @@ func loadProject (settings: ProjectSettings) {
 }
 
 func loadScene (scene: SceneTree) {
-    var rootNode = Node3D()
-    var camera = Camera3D ()
+    let rootNode = Node3D()
+    let camera = Camera3D ()
     camera.current = true
     camera.position = Vector3(x: 0, y: 0, z: 2)
     
     rootNode.addChild(node: camera)
     
     func makeCuteNode (_ pos: Vector3) -> Node {
-        let n = Node3D ()
+        let n = SpinningCube()
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         n.addChild(node: meshRender)
@@ -34,4 +34,25 @@ func loadScene (scene: SceneTree) {
     scene.getRoot().addChild (node: rootNode)
 }
 
-runGodot(args: [], loadScene: loadScene, loadProjectSettings: loadProject)
+
+class SpinningCube: Node3D {
+    required init () {
+        super.init ()
+    }
+    
+    public override func _process(delta: Double) {
+        rotateY(angle: delta)
+    }
+}
+
+func registerTypes (level: GDExtension.InitializationLevel) {
+    print ("Registering level: \(level)")
+    switch level {
+    case .scene:
+        register (type: SpinningCube.self)
+    default:
+        break
+    }
+}
+
+runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: loadProject)
