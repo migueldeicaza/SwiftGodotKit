@@ -22,9 +22,6 @@ func loadScene (scene: SceneTree) {
     
     func makeCuteNode (_ pos: Vector3) -> Node {
         let n = SpinningCube()
-        let meshRender = MeshInstance3D()
-        meshRender.mesh = BoxMesh()
-        n.addChild(node: meshRender)
         n.position = pos
         return n
     }
@@ -38,6 +35,9 @@ func loadScene (scene: SceneTree) {
 class SpinningCube: Node3D {
     required init () {
         super.init ()
+        let meshRender = MeshInstance3D()
+        meshRender.mesh = BoxMesh()
+        addChild(node: meshRender)
     }
     
     public override func _process(delta: Double) {

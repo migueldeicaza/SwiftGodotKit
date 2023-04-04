@@ -15,13 +15,13 @@ var initHookCb: ((GDExtension.InitializationLevel) -> ())?
 
 func projectSettingsBind (_ x: UnsafeMutableRawPointer?) {
     if let cb = loadProjectSettingsCb, let ptr = x {
-        cb (ProjectSettings(nativeHandle: ptr))
+        cb (ProjectSettings.createFrom(nativeHandle: ptr))
     }
 }
 
 func sceneBind (_ startup: UnsafeMutableRawPointer?) {
     if let cb = loadSceneCb, let ptr = startup {
-        cb (SceneTree(nativeHandle: ptr))
+        cb (SceneTree.createFrom(nativeHandle: ptr))
     }
 }
 
@@ -80,7 +80,10 @@ func withUnsafePtr (strings: [String], callback: (UnsafeMutablePointer<UnsafeMut
 ///
 /// This calls first `initHook()` once Godot has initialized, here you can register
 /// types and perform other initialization tasks.   Then `loadProjectSettings` is
-/// called with an instance of ProjectSettings, and finally, your `loadScene` is called
+/// called with an instance of ProjectSettings, and finally, your `loadScene` is called.
+///
+/// While this function does return when Godot is shut down, it is not possible to invoke
+/// Godot again at this point.
 ///
 /// - Parameters:
 ///  - args: arguments to pass to Godot
@@ -90,7 +93,7 @@ func withUnsafePtr (strings: [String], callback: (UnsafeMutablePointer<UnsafeMut
 ///  - verbose: whether to show additional logging information.
 public func runGodot (args: [String], initHook: @escaping (GDExtension.InitializationLevel) -> (), loadScene: @escaping (SceneTree)->(), loadProjectSettings: @escaping (ProjectSettings)->(), verbose: Bool = false) {
     guard loadSceneCb == nil else {
-        print ("runGodot was already invoked")
+        print ("runGodot was already invoked, it can currently only be invoked once")
         return
     }
     loadSceneCb = loadScene
