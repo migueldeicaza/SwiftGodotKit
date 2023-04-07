@@ -40,9 +40,9 @@
 /* Begin PBXFileReference section */
 		49AC9FA029D907B400CE0C91 /* SwiftGodotKit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SwiftGodotKit; sourceTree = BUILT_PRODUCTS_DIR; };
 		49AC9FA329D907B400CE0C91 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		49AC9FAF29D9092100CE0C91 /* SwiftGodot */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftGodot; path = ../SwiftGodot/SwiftGodot; sourceTree = "<group>"; };
 		49AC9FD129D921B900CE0C91 /* Embed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Embed.swift; sourceTree = "<group>"; };
 		49AC9FD929D9B92E00CE0C91 /* libgodot.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libgodot.xcframework; path = ../SwiftGodot/libgodot.xcframework; sourceTree = "<group>"; };
+		49EEC34B29E0830A000EB3C8 /* SwiftGodot */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftGodot; path = ../SwiftGodot; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,7 +88,7 @@
 		49AC9FAA29D907CF00CE0C91 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				49AC9FAF29D9092100CE0C91 /* SwiftGodot */,
+				49EEC34B29E0830A000EB3C8 /* SwiftGodot */,
 			);
 			name = Packages;
 			sourceTree = "<group>";

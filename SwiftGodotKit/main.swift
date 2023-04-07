@@ -28,7 +28,7 @@ func loadScene (scene: SceneTree) {
     rootNode.addChild(node: makeCuteNode(Vector3(x: 1, y: 1, z: 1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
-    scene.getRoot().addChild (node: rootNode)
+    scene.root.addChild(node: rootNode)
 }
 
 
