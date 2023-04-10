@@ -7,6 +7,7 @@
 import Foundation
 import SwiftGodot
 import libgodot
+@_implementationOnly import GDExtension
 
 // Callbacks that the user provides
 var loadSceneCb: ((SceneTree) -> ())?
@@ -41,7 +42,7 @@ func initBind ( //() {
     _ libraryPtr: GDExtensionClassLibraryPtr?,
     _ extensionInit: UnsafeMutablePointer<GDExtensionInitialization>?) -> UInt8 {
         if let iface = ifacePtr {
-            setExtensionInterface(to: iface.pointee, library: libraryPtr)
+            setExtensionInterface(to: OpaquePointer (iface), library: OpaquePointer (libraryPtr))
             
             extensionInit?.pointee = GDExtensionInitialization(
                 minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,

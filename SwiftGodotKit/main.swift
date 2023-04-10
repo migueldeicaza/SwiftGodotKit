@@ -13,6 +13,11 @@ func loadProject (settings: ProjectSettings) {
 }
 
 func loadScene (scene: SceneTree) {
+    let a = GString ("Hello GString")
+    print ("Got: \(a.description)")
+    let sn = StringName(stringLiteral: "Hello StringName")
+    print ("Got: \(sn.description)")
+
     let rootNode = Node3D()
     let camera = Camera3D ()
     camera.current = true
@@ -39,7 +44,6 @@ class SpinningCube: Node3D {
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
     }
-    
     public override func _process(delta: Double) {
         rotateY(angle: delta)
     }
