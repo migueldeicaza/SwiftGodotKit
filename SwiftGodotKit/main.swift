@@ -38,6 +38,9 @@ func loadScene (scene: SceneTree) {
 
 
 class SpinningCube: Node3D {
+    public required init (nativeHandle: UnsafeRawPointer) {
+        super.init (nativeHandle: nativeHandle)
+    }
     required init () {
         super.init ()
         let meshRender = MeshInstance3D()
@@ -46,6 +49,7 @@ class SpinningCube: Node3D {
     }
     public override func _process(delta: Double) {
         rotateY(angle: delta)
+        print (emitSignal(signal: StringName ("Demo")))
     }
 }
 

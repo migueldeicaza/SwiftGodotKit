@@ -42,6 +42,7 @@
 		49AC9FA329D907B400CE0C91 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		49AC9FD129D921B900CE0C91 /* Embed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Embed.swift; sourceTree = "<group>"; };
 		49AC9FD929D9B92E00CE0C91 /* libgodot.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libgodot.xcframework; path = ../SwiftGodot/libgodot.xcframework; sourceTree = "<group>"; };
+		49AEAA8A29E8552B008D6D6B /* SwiftGodotKit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwiftGodotKit.entitlements; sourceTree = "<group>"; };
 		49EEC34B29E0830A000EB3C8 /* SwiftGodot */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftGodot; path = ../SwiftGodot; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -79,6 +80,7 @@
 		49AC9FA229D907B400CE0C91 /* SwiftGodotKit */ = {
 			isa = PBXGroup;
 			children = (
+				49AEAA8A29E8552B008D6D6B /* SwiftGodotKit.entitlements */,
 				49AC9FA329D907B400CE0C91 /* main.swift */,
 				49AC9FD129D921B900CE0C91 /* Embed.swift */,
 			);
@@ -287,9 +289,11 @@
 		49AC9FA829D907B400CE0C91 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SwiftGodotKit/SwiftGodotKit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = PJQC57N853;
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -298,9 +302,11 @@
 		49AC9FA929D907B400CE0C91 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SwiftGodotKit/SwiftGodotKit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = PJQC57N853;
-				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_HARDENED_RUNTIME = NO;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
