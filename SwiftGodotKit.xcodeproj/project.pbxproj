@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		498D2F9029E608870018B750 /* Hud.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2F8F29E608870018B750 /* Hud.swift */; };
+		498D2FA829E9D34E0018B750 /* DodgeMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2FA729E9D34E0018B750 /* DodgeMain.swift */; };
+		498D2FAA29E9D49A0018B750 /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2FA929E9D49A0018B750 /* Player.swift */; };
+		498D2FAC29E9D9AC0018B750 /* Mob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2FAB29E9D9AC0018B750 /* Mob.swift */; };
 		49AC9FA429D907B400CE0C91 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49AC9FA329D907B400CE0C91 /* main.swift */; };
 		49AC9FB229D9093500CE0C91 /* SwiftGodot in Frameworks */ = {isa = PBXBuildFile; productRef = 49AC9FB129D9093500CE0C91 /* SwiftGodot */; };
 		49AC9FB429D9093500CE0C91 /* SwiftGodot in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 49AC9FB129D9093500CE0C91 /* SwiftGodot */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -38,6 +42,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		498D2F8F29E608870018B750 /* Hud.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hud.swift; sourceTree = "<group>"; };
+		498D2FA729E9D34E0018B750 /* DodgeMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DodgeMain.swift; sourceTree = "<group>"; };
+		498D2FA929E9D49A0018B750 /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
+		498D2FAB29E9D9AC0018B750 /* Mob.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mob.swift; sourceTree = "<group>"; };
 		49AC9FA029D907B400CE0C91 /* SwiftGodotKit */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SwiftGodotKit; sourceTree = BUILT_PRODUCTS_DIR; };
 		49AC9FA329D907B400CE0C91 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		49AC9FD129D921B900CE0C91 /* Embed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Embed.swift; sourceTree = "<group>"; };
@@ -59,6 +67,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		498D2F8E29E6087D0018B750 /* Examples */ = {
+			isa = PBXGroup;
+			children = (
+				498D2F8F29E608870018B750 /* Hud.swift */,
+				498D2FA729E9D34E0018B750 /* DodgeMain.swift */,
+				498D2FA929E9D49A0018B750 /* Player.swift */,
+				498D2FAB29E9D9AC0018B750 /* Mob.swift */,
+			);
+			path = Examples;
+			sourceTree = "<group>";
+		};
 		49AC9F9729D907B400CE0C91 = {
 			isa = PBXGroup;
 			children = (
@@ -81,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				49AEAA8A29E8552B008D6D6B /* SwiftGodotKit.entitlements */,
+				498D2F8E29E6087D0018B750 /* Examples */,
 				49AC9FA329D907B400CE0C91 /* main.swift */,
 				49AC9FD129D921B900CE0C91 /* Embed.swift */,
 			);
@@ -165,8 +185,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				498D2FAC29E9D9AC0018B750 /* Mob.swift in Sources */,
 				49AC9FA429D907B400CE0C91 /* main.swift in Sources */,
 				49AC9FD229D921B900CE0C91 /* Embed.swift in Sources */,
+				498D2FA829E9D34E0018B750 /* DodgeMain.swift in Sources */,
+				498D2FAA29E9D49A0018B750 /* Player.swift in Sources */,
+				498D2F9029E608870018B750 /* Hud.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

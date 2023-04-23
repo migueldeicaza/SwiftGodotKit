@@ -42,7 +42,7 @@ func initBind ( //() {
     _ libraryPtr: GDExtensionClassLibraryPtr?,
     _ extensionInit: UnsafeMutablePointer<GDExtensionInitialization>?) -> UInt8 {
         if let iface = ifacePtr {
-            setExtensionInterface(to: OpaquePointer (iface), library: OpaquePointer (libraryPtr))
+            setExtensionInterface(to: OpaquePointer (iface), library: OpaquePointer (libraryPtr!))
             
             extensionInit?.pointee = GDExtensionInitialization(
                 minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
