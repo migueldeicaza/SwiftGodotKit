@@ -73,6 +73,9 @@ class SpinningCube: Node3D {
                 usage: .propertyUsageDefault)
         ]
         
+        let x = Vector2(x: 10, y: 10)
+        let y = x * Int64 (24)
+        
         s.registerSignal(name: SpinningCube.printerSignal, arguments: printArgs)
         
         let f = SpinningCube.MyCallback
