@@ -16,7 +16,7 @@ class Mob: RigidBody2D {
     
     override func _ready() {
         // animatedSprite2D.setPlaying = true
-        var mobTypes = animatedSprite2D.spriteFrames.getAnimationNames()
+        let mobTypes = animatedSprite2D.spriteFrames.getAnimationNames()
         
         let randomPick = Int.random(in: 0..<(Int (mobTypes.size())))
         let name = StringName (String (mobTypes [randomPick]))

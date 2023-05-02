@@ -31,9 +31,9 @@ class Main: Node {
         fatalError()
     }
     
-    func gameOver () {
+    func gameOver () async {
         mobTimer.stop ()
-        hud.showGameOver ()
+        await hud.showGameOver ()
         music.stop ()
         deathSound.play (fromPosition: 0.0)
     }
@@ -81,7 +81,7 @@ class Main: Node {
         mob.rotation = direction
 
         // Choose the velocity for the mob.
-        var velocity = Vector2(x: Float.random (in: 150..<250), y: 0)
+        let velocity = Vector2(x: Float.random (in: 150..<250), y: 0)
         mob.linearVelocity = velocity.rotated(angle: direction)
 
         // Spawn the mob by adding it to the Main scene.

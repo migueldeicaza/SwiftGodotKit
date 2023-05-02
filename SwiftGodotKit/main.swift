@@ -16,9 +16,9 @@ func loadProject (settings: ProjectSettings) {
 
 func loadScene (scene: SceneTree) {
     let a = GString ("Hello GString")
-    print ("Got: \(a.description)")
+    print ("Created a GString, and rendering as a Swift String: \(a.description)")
     let sn = StringName(stringLiteral: "Hello StringName")
-    print ("Got: \(sn.description)")
+    print ("Created a StringName, and rendering as a Swift String: \(sn.description)")
 
 
     let rootNode = Node3D()
@@ -28,7 +28,7 @@ func loadScene (scene: SceneTree) {
     
     rootNode.addChild(node: camera)
     for node in rootNode.getChildren() {
-        print ("Got a \(node)")
+        print ("rootNode's node is a: \(node)")
     }
 
     func makeCuteNode (_ pos: Vector3) -> Node {
@@ -40,9 +40,16 @@ func loadScene (scene: SceneTree) {
     rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
     scene.root.addChild(node: rootNode)
-    
+    let timer = scene.createTimer (timeSec: 3)
+    Task {
+        let start = Date ()
+        await timer.timeout.emitted
+        let ended = Date ()
+        
+        print ("Timer compelted! in \(ended.timeIntervalSince(start))")
+    }
     for node in rootNode.getChildren() {
-        print ("Got a \(node)")
+        print ("rootNode's node is a \(node)")
     }
     
     var r = ClassDB.shared.getClassList()
@@ -55,13 +62,13 @@ func loadScene (scene: SceneTree) {
 class SpinningCube: Node3D {
     var first = 0xdeadcafe
     var second = 0xbad0bad0
-    static let signalName = StringName ("MyFirstSignal")
+    static let myFirstSignal = StringName ("MyFirstSignal")
     static let printerSignal = StringName ("PrinterSignal")
     
     static var initClass: Bool = {
         // This registers the signal
         let s = ClassInfo<SpinningCube>(name: "SpinningCube")
-        s.registerSignal(name: SpinningCube.signalName, arguments: [])
+        s.registerSignal(name: SpinningCube.myFirstSignal, arguments: [])
         
         let printArgs = [
             PropInfo(
@@ -82,6 +89,8 @@ class SpinningCube: Node3D {
         s.registerMethod(name: "MyCallback", flags: .default, returnValue: nil, arguments: [], function: SpinningCube.MyCallback)
         
         s.registerMethod(name: "MyPrinter", flags: .default, returnValue: nil, arguments: printArgs, function: SpinningCube.MyPrinter)
+        mgi.classdb_register_extension_class
+        s.registerMethod(name: "readyCallback", flags: .default, returnValue: nil, arguments: printArgs, function: SpinningCube.readyCallback)
         return true
     }()
     
@@ -101,26 +110,40 @@ class SpinningCube: Node3D {
         // the one we defined here, but I am pointing it to another
         // object (the mesh) and saying "call demo" - which is wrong, but
         // wont be flagged until the event is emitted.
-        print (connect(signal: SpinningCube.signalName, callable: Callable(object: self, method: StringName ("MyCallback"))))
+        print (connect(signal: SpinningCube.myFirstSignal, callable: Callable(object: self, method: StringName ("MyCallback"))))
         print (connect(signal: SpinningCube.printerSignal, callable: Callable(object: self, method: StringName ("MyPrinter"))))
-
+        print (connect(signal: StringName ("ready"), callable: Callable (object: self, method: StringName ("readyCallback"))))
+        let r = ready.connect {
+            print ("READY INVOKED")
+        }
+    }
+    
+    override func _input (event: InputEvent) {
+        guard event.isPressed () && !event.isEcho () else { return }
+        print ("SpinningCube: event: isPressed ")
+    }
+    
+    func readyCallback (args: [Variant]) -> Variant? {
+        print ("SpinningCube: readyCallback method called")
+        return nil
+        
     }
     
     func MyCallback (args: [Variant]) -> Variant? {
-        print ("MySignal triggered")
+        print ("SpinningCube: MySignal triggered")
         return nil
     }
 
     func MyPrinter (args: [Variant]) -> Variant? {
         guard args.count > 0 else {
-            print ("Not enough parameters to MyPrinter: \(args.count)")
+            print ("SpinningCube: Not enough parameters to MyPrinter: \(args.count)")
             return nil
         }
         guard let v = GString (args [0]) else {
-            print ("No string in vararg")
+            print ("SpinningCube: No string in vararg")
             return nil
         }
-        print ("MyPrinter: \(v.description)")
+        print ("SpinningCube.MyPrinter, got string payload \(v.description)")
         return nil
     }
 
@@ -128,8 +151,10 @@ class SpinningCube: Node3D {
         rotateY(angle: delta)
         // Here we emit the signal, but due to the wrong bindnig above,
         // it will print an error
-        print (emitSignal(signal: SpinningCube.signalName))
-        print (emitSignal(signal: SpinningCube.printerSignal, Variant (GString ("Delta is: \(delta)"))))
+        let emitMyFirstSignalResult = emitSignal(signal: SpinningCube.myFirstSignal)
+        print ("emitMyFirstSignalResult: \(emitMyFirstSignalResult)")
+        let emitMyPrinterSignalResult = emitSignal(signal: SpinningCube.printerSignal, Variant (GString ("Delta is: \(delta)")))
+        print ("emitMyPrinterSignalResult: \(emitMyPrinterSignalResult)")
     }
 }
 

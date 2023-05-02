@@ -37,13 +37,19 @@ func embeddedExtensionDeinit (userData: UnsafeMutableRawPointer?, l: GDExtension
     print ("SwiftEmbed: Unregister here")
 }
 
+var mgi: GDExtensionInterface!
+var library: OpaquePointer!
+var gfcallbacks = UnsafePointer<GDExtensionInstanceBindingCallbacks> (Wrapped.fcallbacks)
+var gucallbacks = UnsafePointer<GDExtensionInstanceBindingCallbacks> (Wrapped.ucallbacks)
+
 func initBind ( //() {
     _ ifacePtr: UnsafePointer<GDExtensionInterface>?,
     _ libraryPtr: GDExtensionClassLibraryPtr?,
     _ extensionInit: UnsafeMutablePointer<GDExtensionInitialization>?) -> UInt8 {
         if let iface = ifacePtr {
             setExtensionInterface(to: OpaquePointer (iface), library: OpaquePointer (libraryPtr!))
-            
+            mgi = iface.pointee
+            library = OpaquePointer (libraryPtr)!
             extensionInit?.pointee = GDExtensionInitialization(
                 minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
                 userdata: nil,

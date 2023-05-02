@@ -28,15 +28,15 @@ class Hud: CanvasLayer {
         messageTimer.start()
     }
     
-    func showGameOver () {
+    func showGameOver () async {
         showMessage("Game over")
-        // TODO: This is a signal
-        //await timer.timeout()
+        
+        await messageTimer.timeout.emitted
         messageLabel.text = "Dodge the creeps"
         messageLabel.show ()
         let t = getTree().createTimer(timeSec: 1)
-        // TODO this is a signal
-        // await t.timeout()
+        
+        await t.timeout.emitted
         startButton.show ()
     }
     
