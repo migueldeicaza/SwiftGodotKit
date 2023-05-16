@@ -42,6 +42,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		49008AB32A1285C200F2B874 /* SwiftGodot */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftGodot; path = ../SwiftGodot; sourceTree = "<group>"; };
 		498D2F8F29E608870018B750 /* Hud.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Hud.swift; sourceTree = "<group>"; };
 		498D2FA729E9D34E0018B750 /* DodgeMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DodgeMain.swift; sourceTree = "<group>"; };
 		498D2FA929E9D49A0018B750 /* Player.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Player.swift; sourceTree = "<group>"; };
@@ -51,7 +52,6 @@
 		49AC9FD129D921B900CE0C91 /* Embed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Embed.swift; sourceTree = "<group>"; };
 		49AC9FD929D9B92E00CE0C91 /* libgodot.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libgodot.xcframework; path = ../SwiftGodot/libgodot.xcframework; sourceTree = "<group>"; };
 		49AEAA8A29E8552B008D6D6B /* SwiftGodotKit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwiftGodotKit.entitlements; sourceTree = "<group>"; };
-		49EEC34B29E0830A000EB3C8 /* SwiftGodot */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SwiftGodot; path = ../SwiftGodot; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,7 +110,7 @@
 		49AC9FAA29D907CF00CE0C91 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				49EEC34B29E0830A000EB3C8 /* SwiftGodot */,
+				49008AB32A1285C200F2B874 /* SwiftGodot */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
