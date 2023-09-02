@@ -1,5 +1,10 @@
 //
 //  main.swift
+//
+// This sample is ugly because it is convenient for me to test and try things out,
+// and this is definitely not how you should write your code, it is just a big ball
+// of messy things that are useful for me when debugging.
+//
 //  SwiftGodotKit Sample
 //
 //  Created by Miguel de Icaza on 4/1/23.
@@ -7,6 +12,7 @@
 
 import Foundation
 import SwiftGodot
+import SwiftGodotKit
 
 func loadProject (settings: ProjectSettings) {
     //var notset = Variant("Not Set")
@@ -39,11 +45,11 @@ func loadScene (scene: SceneTree) {
     rootNode.addChild(node: makeCuteNode(Vector3(x: 1, y: 1, z: 1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
-    scene.root.addChild(node: rootNode)
+    scene.root?.addChild(node: rootNode)
     let timer = scene.createTimer (timeSec: 3)
     Task {
         let start = Date ()
-        await timer.timeout.emitted
+        await timer?.timeout.emitted
         let ended = Date ()
         
         print ("Timer compelted! in \(ended.timeIntervalSince(start))")
@@ -55,17 +61,16 @@ func loadScene (scene: SceneTree) {
         print (r)
     }
     
-    var r = ClassDB.shared.getClassList()
+    print ("ClassList:")
+    let r = ClassDB.shared.getClassList()
     for x in r {
-        print (x)
+        print ("   classItem: \(x)")
     }
     
 }
 
 
 class SpinningCube: Node3D {
-    var first = 0xdeadcafe
-    var second = 0xbad0bad0
     static let myFirstSignal = StringName ("MyFirstSignal")
     static let printerSignal = StringName ("PrinterSignal")
     
@@ -93,7 +98,6 @@ class SpinningCube: Node3D {
         s.registerMethod(name: "MyCallback", flags: .default, returnValue: nil, arguments: [], function: SpinningCube.MyCallback)
         
         s.registerMethod(name: "MyPrinter", flags: .default, returnValue: nil, arguments: printArgs, function: SpinningCube.MyPrinter)
-        mgi.classdb_register_extension_class
         s.registerMethod(name: "readyCallback", flags: .default, returnValue: nil, arguments: printArgs, function: SpinningCube.readyCallback)
         return true
     }()

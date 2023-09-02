@@ -1,0 +1,60 @@
+#!/bin/bash
+if test ! -e make-libgodot.xcframework; then
+    echo this script needs to be executed from the SwiftGodotKit/scripts directory
+    exit 1
+fi
+if test x$2 = x; then
+   echo usage is: make-libgodot.xcframework SwiftGodotDIR libgodotDIR OUTPUT_DIR
+   exit 1
+fi
+SG=$1
+LG=$2
+ODIR=$3
+intel=macpro
+arm=studio.localdomain
+dir=cvs/libgodot
+hash=1fc23bc7831b5dc559ec7d284437e62d6067f4f8
+target_kind=template_debug
+build_base="scons platform=macos target=$target_kind library_type=shared_library debug_symbols=yes"
+
+build() {
+    host=$1
+    build=$2
+    file=$3
+    echo "starting build on $host"
+    ssh -A $host "cd $dir && git pull --rebase && git reset --hard $hash && rm -rf bin && $build"
+    scp $host:$dir/bin/$file $file
+}
+
+arm_dylib=libgodot.macos.template_debug.arm64.dylib
+intel_dylib=libgodot.macos.template_debug.dev.x86_64.dylib
+#build $intel "/usr/local/bin/$build_base dev_build=yes" $intel_dylib
+#build $arm "/opt/homebrew/bin/$build_base vulkan_sdk_path=~/MoltenVK/" $arm_dylib
+
+# Now make the xcframework
+rm -rf $ODIR/libgodot.xcframework
+rm -rf $ODIR/libgodot.xcframework.zip
+tmp=/tmp/dir-$$
+mkdir $tmp
+echo '#define LIBRARY_ENABLED' > $tmp/libgodot.h
+cp $SG/Sources/GDExtension/include/gdextension_interface.h $tmp/gdextension_interface.h
+sed -e 's#core/extension/gdextension#gdextension#' -e 's/bool/int/' < $LG/core/libgodot/libgodot.h >> $tmp/libgodot.h
+cat > $tmp/module.modulemap << EOF
+module libgodot {
+    header "libgodot.h"
+    export *
+}
+EOF
+rm -rf libgodot.xcframework
+install_name_tool -id libgodot.dylib $arm_dylib
+install_name_tool -id libgodot.dylib $intel_dylib
+lipo  -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
+
+xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
+zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
+checksum=`swift package compute-checksum $ODIR/libgodot.xcframework.zip`
+
+rm -rf /tmp/dir-$$
+exit 0
+
+

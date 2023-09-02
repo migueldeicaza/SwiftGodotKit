@@ -20,12 +20,6 @@ func projectSettingsBind (_ x: UnsafeMutableRawPointer?) {
     }
 }
 
-func sceneBind (_ startup: UnsafeMutableRawPointer?) {
-    if let cb = loadSceneCb, let ptr = startup {
-        cb (SceneTree.createFrom(nativeHandle: ptr))
-    }
-}
-
 func embeddedExtensionInit (userData: UnsafeMutableRawPointer?, l: GDExtensionInitializationLevel) {
     print ("SwiftEmbed: Register our types here, level: \(l)")
     if let cb = initHookCb {
@@ -37,29 +31,9 @@ func embeddedExtensionDeinit (userData: UnsafeMutableRawPointer?, l: GDExtension
     print ("SwiftEmbed: Unregister here")
 }
 
-var mgi: GDExtensionInterface!
 var library: OpaquePointer!
 var gfcallbacks = UnsafePointer<GDExtensionInstanceBindingCallbacks> (Wrapped.fcallbacks)
 var gucallbacks = UnsafePointer<GDExtensionInstanceBindingCallbacks> (Wrapped.ucallbacks)
-
-func initBind ( //() {
-    _ ifacePtr: UnsafePointer<GDExtensionInterface>?,
-    _ libraryPtr: GDExtensionClassLibraryPtr?,
-    _ extensionInit: UnsafeMutablePointer<GDExtensionInitialization>?) -> UInt8 {
-        if let iface = ifacePtr {
-            setExtensionInterface(to: OpaquePointer (iface), library: OpaquePointer (libraryPtr!))
-            mgi = iface.pointee
-            library = OpaquePointer (libraryPtr)!
-            extensionInit?.pointee = GDExtensionInitialization(
-                minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
-                userdata: nil,
-                initialize: embeddedExtensionInit,
-                deinitialize: embeddedExtensionDeinit)
-            return 1
-        }
-        
-        return 0
-}
 
 // Courtesy of GPT-4
 func withUnsafePtr (strings: [String], callback: (UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>?)->()) {
@@ -107,7 +81,27 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
     loadProjectSettingsCb = loadProjectSettings
     initHookCb = initHook
     
-    libgodot_bind(initBind, sceneBind, projectSettingsBind)
+    libgodot_gdextension_bind { godotGetProcAddr, libraryPtr, extensionInit in
+        if let godotGetProcAddr {
+            let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
+            setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
+            library = OpaquePointer (libraryPtr)!
+            extensionInit?.pointee = GDExtensionInitialization(
+                minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
+                userdata: nil,
+                initialize: embeddedExtensionInit,
+                deinitialize: embeddedExtensionDeinit)
+            return 1
+        }
+        
+        return 0
+    } _: { startup in
+        if let cb = loadSceneCb, let ptr = startup {
+            cb (SceneTree.createFrom(nativeHandle: ptr))
+        }
+    }
+
+    //libgodot_bind(initBind, sceneBind, projectSettingsBind)
     var copy = args
     copy.insert("SwiftGodotKit", at: 0)
     if verbose {
