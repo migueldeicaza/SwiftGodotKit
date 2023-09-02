@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,8 +11,8 @@
 		498D2FA829E9D34E0018B750 /* DodgeMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2FA729E9D34E0018B750 /* DodgeMain.swift */; };
 		498D2FAA29E9D49A0018B750 /* Player.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2FA929E9D49A0018B750 /* Player.swift */; };
 		498D2FAC29E9D9AC0018B750 /* Mob.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498D2FAB29E9D9AC0018B750 /* Mob.swift */; };
+		499BC4782AA2714F00498D74 /* SwiftGodot in Frameworks */ = {isa = PBXBuildFile; productRef = 499BC4772AA2714F00498D74 /* SwiftGodot */; };
 		49AC9FA429D907B400CE0C91 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49AC9FA329D907B400CE0C91 /* main.swift */; };
-		49AC9FB229D9093500CE0C91 /* SwiftGodot in Frameworks */ = {isa = PBXBuildFile; productRef = 49AC9FB129D9093500CE0C91 /* SwiftGodot */; };
 		49AC9FB429D9093500CE0C91 /* SwiftGodot in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 49AC9FB129D9093500CE0C91 /* SwiftGodot */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		49AC9FD229D921B900CE0C91 /* Embed.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49AC9FD129D921B900CE0C91 /* Embed.swift */; };
 		49AC9FDA29D9B92E00CE0C91 /* libgodot.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 49AC9FD929D9B92E00CE0C91 /* libgodot.xcframework */; };
@@ -59,7 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				49AC9FB229D9093500CE0C91 /* SwiftGodot in Frameworks */,
+				499BC4782AA2714F00498D74 /* SwiftGodot in Frameworks */,
 				49AC9FDA29D9B92E00CE0C91 /* libgodot.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -142,6 +142,7 @@
 			name = SwiftGodotKit;
 			packageProductDependencies = (
 				49AC9FB129D9093500CE0C91 /* SwiftGodot */,
+				499BC4772AA2714F00498D74 /* SwiftGodot */,
 			);
 			productName = SwiftGodotKit;
 			productReference = 49AC9FA029D907B400CE0C91 /* SwiftGodotKit */;
@@ -171,6 +172,9 @@
 				Base,
 			);
 			mainGroup = 49AC9F9729D907B400CE0C91;
+			packageReferences = (
+				499BC4762AA2714F00498D74 /* XCLocalSwiftPackageReference "../SwiftGodot" */,
+			);
 			productRefGroup = 49AC9FA129D907B400CE0C91 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -359,7 +363,18 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		499BC4762AA2714F00498D74 /* XCLocalSwiftPackageReference "../SwiftGodot" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../SwiftGodot;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		499BC4772AA2714F00498D74 /* SwiftGodot */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftGodot;
+		};
 		49AC9FB129D9093500CE0C91 /* SwiftGodot */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SwiftGodot;

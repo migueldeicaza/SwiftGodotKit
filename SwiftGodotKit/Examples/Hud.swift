@@ -34,7 +34,9 @@ class Hud: CanvasLayer {
         await messageTimer.timeout.emitted
         messageLabel.text = "Dodge the creeps"
         messageLabel.show ()
-        let t = getTree().createTimer(timeSec: 1)
+        guard let t = getTree()?.createTimer(timeSec: 1) else {
+            return
+        }
         
         await t.timeout.emitted
         startButton.show ()

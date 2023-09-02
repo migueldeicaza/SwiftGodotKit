@@ -39,11 +39,11 @@ func loadScene (scene: SceneTree) {
     rootNode.addChild(node: makeCuteNode(Vector3(x: 1, y: 1, z: 1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
     rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
-    scene.root.addChild(node: rootNode)
+    scene.root?.addChild(node: rootNode)
     let timer = scene.createTimer (timeSec: 3)
     Task {
         let start = Date ()
-        await timer.timeout.emitted
+        await timer?.timeout.emitted
         let ended = Date ()
         
         print ("Timer compelted! in \(ended.timeIntervalSince(start))")
@@ -55,9 +55,10 @@ func loadScene (scene: SceneTree) {
         print (r)
     }
     
+    print ("ClassList:")
     var r = ClassDB.shared.getClassList()
     for x in r {
-        print (x)
+        print ("   classItem: \(x)")
     }
     
 }
@@ -93,7 +94,6 @@ class SpinningCube: Node3D {
         s.registerMethod(name: "MyCallback", flags: .default, returnValue: nil, arguments: [], function: SpinningCube.MyCallback)
         
         s.registerMethod(name: "MyPrinter", flags: .default, returnValue: nil, arguments: printArgs, function: SpinningCube.MyPrinter)
-        mgi.classdb_register_extension_class
         s.registerMethod(name: "readyCallback", flags: .default, returnValue: nil, arguments: printArgs, function: SpinningCube.readyCallback)
         return true
     }()
