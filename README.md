@@ -2,7 +2,7 @@ SwiftGodotKit provides a way of embedding Godot into an existing Swift
 application and driving Godot from Swift, without having to use an
 extension.
 
-Take a look at the `UglySample` here to see how it works.
+Take a look at the `TrivialSample` here to see how it works.
 
 Reference this Package.swift and then you can write a simple program
 like this:
