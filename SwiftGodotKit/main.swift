@@ -56,7 +56,7 @@ func loadScene (scene: SceneTree) {
     }
     
     print ("ClassList:")
-    var r = ClassDB.shared.getClassList()
+    let r = ClassDB.shared.getClassList()
     for x in r {
         print ("   classItem: \(x)")
     }
