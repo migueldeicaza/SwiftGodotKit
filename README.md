@@ -33,30 +33,6 @@ func loadScene (scene: SceneTree) {
 
 
 class SpinningCube: Node3D {
-    static let myFirstSignal = StringName ("MyFirstSignal")
-    static let printerSignal = StringName ("PrinterSignal")
-    
-    static var initClass: Bool = {
-        // This registers the signal
-        let s = ClassInfo<SpinningCube>(name: "SpinningCube")
-        s.registerSignal(name: SpinningCube.myFirstSignal, arguments: [])
-        
-        let printArgs = [
-            PropInfo(
-                propertyType: .string,
-                propertyName: StringName ("myArg"),
-                className: "SpinningCube",
-                hint: .flags,
-                hintStr: "Text",
-                usage: .propertyUsageDefault)
-        ]
-        
-        let x = Vector2(x: 10, y: 10)
-        let y = x * Int64 (24)
-        
-        return true
-    }()
-    
     required init (nativeHandle: UnsafeRawPointer) {
         super.init (nativeHandle: nativeHandle)
     }
@@ -66,8 +42,6 @@ class SpinningCube: Node3D {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
-        
-        _ = SpinningCube.initClass
     }
     
     override func _input (event: InputEvent) {
