@@ -4,6 +4,8 @@ extension.
 
 Take a look at the `TrivialSample` here to see how it works.
 
+You will need Swift 5.9 for this (Xcode 15 release candidate will do).
+
 Reference this Package.swift and then you can write a simple program
 like this:
 
@@ -65,6 +67,11 @@ func registerTypes (level: GDExtension.InitializationLevel) {
 
 runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })
 ```
+
+A standalone sample that you can use as a starting point is available here, when used as SwiftPM:
+
+https://github.com/migueldeicaza/SwiftGodotKit/tree/main/StandaloneExample
+
 
 # Sausage Making Details 
 
