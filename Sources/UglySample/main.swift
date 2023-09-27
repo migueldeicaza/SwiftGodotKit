@@ -69,6 +69,14 @@ func loadScene (scene: SceneTree) {
     
 }
 
+@Godot
+class Demo: Node3D {
+    @Export var count: Int = 3
+    @Callable
+    func performCuteOperation (x: Int, s: String) -> Resource? {
+        return nil
+    }
+}
 
 class SpinningCube: Node3D {
     static let myFirstSignal = StringName ("MyFirstSignal")
@@ -126,6 +134,14 @@ class SpinningCube: Node3D {
         }
     }
     
+        private func testMesh() {
+                let mesh = BoxMesh()
+                mesh.size = Vector3(x: 2, y: 2, z: 2)
+                let meshInstance = MeshInstance3D()
+                meshInstance.mesh = mesh
+                self.addChild(node: meshInstance)
+            }
+    
     override func _input (event: InputEvent) {
         guard event.isPressed () && !event.isEcho () else { return }
         print ("SpinningCube: event: isPressed ")
@@ -155,25 +171,61 @@ class SpinningCube: Node3D {
         return nil
     }
 
+    public override func _ready() {
+        testMesh()
+    }
     public override func _process(delta: Double) {
         rotateY(angle: delta)
         // Here we emit the signal, but due to the wrong bindnig above,
         // it will print an error
-        let emitMyFirstSignalResult = emitSignal(signal: SpinningCube.myFirstSignal)
+        let emitMyFirstSignalResult = emitSignal(SpinningCube.myFirstSignal)
         print ("emitMyFirstSignalResult: \(emitMyFirstSignalResult)")
-        let emitMyPrinterSignalResult = emitSignal(signal: SpinningCube.printerSignal, Variant (GString ("Delta is: \(delta)")))
+        let emitMyPrinterSignalResult = emitSignal(SpinningCube.printerSignal, Variant (GString ("Delta is: \(delta)")))
         print ("emitMyPrinterSignalResult: \(emitMyPrinterSignalResult)")
     }
 }
 
+class Another: Node3D {
+    override func _ready() {
+        testMesh ()
+        testArray ()
+    }
+
+    func testArray ()
+    {
+        print ("Testing the other case")
+        let gArray = GArray()
+              gArray.pushBack(value: Variant("Hello"))
+              let value = gArray[Int(0)]
+              GD.print("\(value)")
+        
+
+    }
+    private func testMesh() {
+        let mesh = BoxMesh()
+        mesh.size = Vector3(x: 2, y: 2, z: 2)
+        let meshInstance = MeshInstance3D()
+        meshInstance.mesh = mesh
+        meshInstance.name = "TestName"
+        self.addChild(node: meshInstance, forceReadableName: true)
+    }
+
+    
+}
 func registerTypes (level: GDExtension.InitializationLevel) {
     print ("Registering level: \(level)")
     switch level {
     case .scene:
-        register (type: SpinningCube.self)
+        register (type: Another.self)
     default:
         break
     }
 }
 
-runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: loadProject)
+func loadTwo (scene: SceneTree) {
+    let rootNode = Node3D()
+    rootNode.addChild(node: Another ())
+    scene.root?.addChild(node: rootNode)
+}
+
+runGodot(args: [], initHook: registerTypes, loadScene: loadTwo, loadProjectSettings: loadProject)

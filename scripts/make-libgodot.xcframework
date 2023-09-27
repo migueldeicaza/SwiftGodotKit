@@ -22,14 +22,14 @@ build() {
     build=$2
     file=$3
     echo "starting build on $host"
-    ssh -A $host "cd $dir && git pull --rebase && git reset --hard $hash && rm -rf bin && $build"
+    #ssh -A $host "cd $dir && git pull --rebase && git reset --hard $hash && rm -rf bin && $build"
     scp $host:$dir/bin/$file $file
 }
 
 arm_dylib=libgodot.macos.template_debug.arm64.dylib
 intel_dylib=libgodot.macos.template_debug.dev.x86_64.dylib
-#build $intel "/usr/local/bin/$build_base dev_build=yes" $intel_dylib
-#build $arm "/opt/homebrew/bin/$build_base vulkan_sdk_path=~/MoltenVK/" $arm_dylib
+build $intel "/usr/local/bin/$build_base dev_build=yes" $intel_dylib
+build $arm "/opt/homebrew/bin/$build_base vulkan_sdk_path=~/MoltenVK/" $arm_dylib
 
 # Now make the xcframework
 rm -rf $ODIR/libgodot.xcframework
@@ -46,8 +46,8 @@ module libgodot {
 }
 EOF
 rm -rf libgodot.xcframework
-install_name_tool -id libgodot.dylib $arm_dylib
-install_name_tool -id libgodot.dylib $intel_dylib
+#install_name_tool -id libgodot.dylib $arm_dylib
+#install_name_tool -id libgodot.dylib $intel_dylib
 lipo  -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
 
 xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
