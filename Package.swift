@@ -42,8 +42,8 @@ let package = Package(
             dependencies: ["SwiftGodotKit", "libgodot"]),
         .binaryTarget (
             name: "libgodot",
-            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.0.0/libgodot.xcframework.zip",
-            checksum: "bbe8f4225c34187e5d9b183a60147826a79e7f40e43b47b6ed98b311b6242a6d"
+            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.0.1/libgodot.xcframework.zip",
+            checksum: "bb6ec0946311a71f1eba7ad393c0adf7b8f34a2389d8234ff500b2764b0c6ba5"
         ),
         .testTarget(
             name: "SwiftGodotKitTests",

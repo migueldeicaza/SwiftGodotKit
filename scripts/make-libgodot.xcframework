@@ -46,9 +46,9 @@ module libgodot {
 }
 EOF
 rm -rf libgodot.xcframework
-#install_name_tool -id libgodot.dylib $arm_dylib
-#install_name_tool -id libgodot.dylib $intel_dylib
-lipo  -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
+install_name_tool -id @rpath/libgodot.dylib $arm_dylib
+install_name_tool -id @rpath/libgodot.dylib $intel_dylib
+lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
 
 xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
 zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
