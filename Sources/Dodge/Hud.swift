@@ -48,7 +48,7 @@ class Hud: CanvasLayer {
     
     public func on_StartButton_pressed () {
         startButton.hide()
-        emitSignal (signal: "StartGame")
+        emitSignal ("StartGame")
     }
     
     public func on_MessageTimer_timeout () {

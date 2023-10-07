@@ -62,7 +62,7 @@ func loadScene (scene: SceneTree) {
     }
     
     print ("ClassList:")
-    let r = ClassDB.shared.getClassList()
+    let r = ClassDB.getClassList()
     for x in r {
         print ("   classItem: \(x)")
     }
@@ -94,7 +94,7 @@ class SpinningCube: Node3D {
                 className: "SpinningCube",
                 hint: .flags,
                 hintStr: "Text",
-                usage: .propertyUsageDefault)
+                usage: .default)
         ]
         
         let x = Vector2(x: 10, y: 10)
@@ -129,7 +129,7 @@ class SpinningCube: Node3D {
         print (connect(signal: SpinningCube.myFirstSignal, callable: Callable(object: self, method: StringName ("MyCallback"))))
         print (connect(signal: SpinningCube.printerSignal, callable: Callable(object: self, method: StringName ("MyPrinter"))))
         print (connect(signal: StringName ("ready"), callable: Callable (object: self, method: StringName ("readyCallback"))))
-        let r = ready.connect {
+        let _ = ready.connect {
             print ("READY INVOKED")
         }
     }

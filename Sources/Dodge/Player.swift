@@ -31,7 +31,7 @@ class Player: Area2D {
     func on_player_body_entered (body: PhysicsBody2D) {
         // player dissapears after being hit
         super.hide ()
-        super.emitSignal(signal: "hit")
+        super.emitSignal("hit")
         // Must be deferred as we can't change physics properties on a physics callback.
         collissionShape2D.setDeferred(property: StringName ("disabled"), value: Variant (true))
     }
@@ -39,19 +39,16 @@ class Player: Area2D {
     override func _process(delta: Double) {
         var velocity = Vector2(x: 0, y: 0)
 
-        // Note: exact=false by default, in Rust we have to provide it explicitly
-        let input = Input.shared
-        
-        if input.isActionPressed(action: "ui_right", exactMatch: false) {
+        if Input.isActionPressed(action: "ui_right", exactMatch: false) {
             velocity = velocity + Vector2 (x: 0, y: 0)
         }
-        if input.isActionPressed(action: "ui_left", exactMatch: false) {
+        if Input.isActionPressed(action: "ui_left", exactMatch: false) {
             velocity = velocity + Vector2.left
         }
-        if input.isActionPressed(action: "ui_down", exactMatch: false) {
+        if Input.isActionPressed(action: "ui_down", exactMatch: false) {
             velocity = velocity + Vector2.down
         }
-        if input.isActionPressed(action: "ui_up", exactMatch: false) {
+        if Input.isActionPressed(action: "ui_up", exactMatch: false) {
             velocity = velocity + Vector2.up
         }
         

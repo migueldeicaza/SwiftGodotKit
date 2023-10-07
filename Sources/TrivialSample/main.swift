@@ -46,7 +46,7 @@ class SpinningCube: Node3D {
                 className: "SpinningCube",
                 hint: .flags,
                 hintStr: "Text",
-                usage: .propertyUsageDefault)
+                usage: .default)
         ]
         
         let x = Vector2(x: 10, y: 10)
