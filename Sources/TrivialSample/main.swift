@@ -64,11 +64,19 @@ class SpinningCube: Node3D {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
-        
         _ = SpinningCube.initClass
     }
     
     override func _input (event: InputEvent) {
+        switch event {
+        case let mouseEvent as InputEventMouseButton:
+            print("MouseButton: \(mouseEvent)")
+        case let mouseMotion as InputEventMouseMotion:
+            print("MouseMotion: \(mouseMotion)")
+        default:
+            print (event)
+        }        
+        
         guard event.isPressed () && !event.isEcho () else { return }
         print ("SpinningCube: event: isPressed ")
     }
