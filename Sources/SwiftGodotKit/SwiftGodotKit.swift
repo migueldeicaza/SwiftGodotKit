@@ -101,7 +101,7 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
         }
     }
 
-    //libgodot_bind(initBind, sceneBind, projectSettingsBind)
+    libgodot_bind(initBind, sceneBind, projectSettingsBind)
     var copy = args
     copy.insert("SwiftGodotKit", at: 0)
     if verbose {
