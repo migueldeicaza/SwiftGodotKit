@@ -12,12 +12,11 @@ import XCTest
 final class Vector2iTests: XCTestCase {
     
     func testOperatorPlus() async {
-        await GodotRuntime.ensureRunning()
         var value: Vector2i
         
         value = Vector2i.init(x: 1, y: 2) + Vector2i.init(x: 3, y: 4)
         XCTAssertEqual(value.x, 4)
-        XCTAssertEqual(value.x, 6)
+        XCTAssertEqual(value.y, 6)
     }
     
 }
