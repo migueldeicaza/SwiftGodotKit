@@ -13,6 +13,8 @@ final class MainTest: XCTestCase {
     
     private func runTests () {
         run (test: Vector2iTests ())
+        run (test: Vector3iTests ())
+        run (test: Vector4iTests ())
     }
     
     private func run (test: XCTest) {
