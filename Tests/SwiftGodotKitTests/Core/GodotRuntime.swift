@@ -15,24 +15,21 @@ final class GodotRuntime {
     static var scene: SceneTree?
     static var settings: ProjectSettings?
     
-    static func run(completion: @escaping () -> Void) {
+    static func run (completion: @escaping () -> Void) {
         guard !isRunning else { return }
-        runGodot(args: [], initHook: { level in
-            switch level {
-            case .scene:
-                completion()
-            default:
-                break
-            }
+        isRunning = true
+        runGodot (args: [], initHook: { level in
         }, loadScene: { scene in
             self.scene = scene
+            completion()
         }, loadProjectSettings: { settings in
             self.settings = settings
         })
     }
     
     static func stop() {
-        scene?.quit()
+        isRunning = false
+        scene?.quit ()
     }
     
 }
