@@ -10,7 +10,86 @@ import Foundation
 import SwiftGodot
 import SwiftGodotKit
 
+//extension GArray: Sequence {
+//    public struct GArrayIterator: IteratorProtocol {
+//        public mutating func next() -> SwiftGodot.Variant? {
+//            idx += 1
+//            if idx < a.size() {
+//                return a[idx]
+//            }
+//            return nil
+//        }
+//        
+//        public typealias Element = Variant
+//        
+//        let a: GArray
+//        var idx = -1
+//        
+//        init (_ a: GArray) {
+//            self.a = a
+//        }
+//    }
+//    public func makeIterator() -> GArrayIterator {
+//        return GArrayIterator (self)
+//    }
+//}
+
+func propInfo (from: GDictionary) -> PropInfo? {
+    guard let name = from ["name"]?.description else { return nil }
+    guard let type = Int (from ["type"] ?? Variant (Nil())) else { return nil }
+    guard let className = from ["class_name"]?.description else { return nil }
+    guard let hint = Int (from ["hint"] ?? Variant (Nil())) else { return nil }
+    guard let hint_string = from ["hint_string"]?.description else { return nil }
+    guard let usage = Int (from ["usage"] ?? Variant (Nil())) else { return nil }
+    return PropInfo(propertyType: Variant.GType(rawValue: type)!,
+                    propertyName: StringName(stringLiteral: name),
+                    className: StringName (stringLiteral: className),
+                    hint: PropertyHint (rawValue: hint)!,
+                    hintStr: GString (stringLiteral: hint_string),
+                    usage: PropertyUsageFlags(rawValue: usage))
+}
+
 func loadScene (scene: SceneTree) {
+    let properties = ClassDB.classGetPropertyList (class: StringName ("Node2D"))
+    print ("Elements: \(properties.count)")
+    var a = GArray()
+    a.append(value: Variant ("Hello"))
+    a.append(value: Variant ("Word"))
+    a.append(value: Variant ("Foo"))
+    for x in a {
+        print ("value is \(x)")
+    }
+        
+    for dict in properties {
+        guard let p = propInfo(from: dict) else {
+            print ("Failed to load \(dict)")
+            continue
+        }
+        if p.usage.contains(.group) {
+            print ("GROUP: \(p.propertyName)")
+            continue
+        } else if p.usage.contains(.subgroup) {
+            print ("Subgroup: \(p.hintStr)")
+        } else if p.usage.contains(.category) {
+            print ("Category")
+        } else {
+            let prefix: String
+            if p.usage == [] {
+                prefix = "SKIP: "
+                continue
+            } else {
+                prefix = ""
+            }
+            let hintStr: String
+            if p.hintStr != "" {
+                hintStr = "hintStr=\(p.hintStr)"
+            } else {
+                hintStr = ""
+            }
+            print ("    \(prefix)name=\(p.propertyName)/\(p.className) type=\(p.propertyType) hint=\(p.hint) \(hintStr) usage=\(p.usage)")
+        }
+    }
+
     let rootNode = Node3D()
     let camera = Camera3D ()
     camera.current = true
@@ -87,6 +166,8 @@ class SpinningCube: Node3D {
 }
 
 func registerTypes (level: GDExtension.InitializationLevel) {
+    GD.printerr(arg1: Variant ("hello"))
+    
     switch level {
     case .scene:
         register (type: SpinningCube.self)

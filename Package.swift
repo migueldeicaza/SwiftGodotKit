@@ -15,11 +15,11 @@ let package = Package(
             targets: ["SwiftGodotKit"]),
         .library(name: "Dodge", targets: ["Dodge"]),
         .executable(name: "UglySample", targets: ["UglySample"]),
+        .executable(name: "Properties", targets: ["Properties"]),
         .executable(name: "TrivialSample", targets: ["TrivialSample"])
     ],
     dependencies: [
-        //.package(path: "/Users/miguel/cvs/SwiftGodot")
-        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "5763a60ecfb258eb9b04b422fc61ff2098562b80")
+        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "07aa601da14b11536b745ab6e056129f0b09c927")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -28,15 +28,18 @@ let package = Package(
             name: "SwiftGodotKit",
             dependencies: ["SwiftGodot", "libgodot"]),
         
-        .executableTarget(
-            name: "UglySample",
-            dependencies: ["SwiftGodotKit"]),
-
             .executableTarget(
-            name: "TrivialSample",
-            dependencies: ["SwiftGodotKit"]),
-
-
+                name: "UglySample",
+                dependencies: ["SwiftGodotKit"]),
+        
+            .executableTarget(
+                name: "TrivialSample",
+                dependencies: ["SwiftGodotKit"]),
+        
+            .executableTarget(
+                name: "Properties",
+                dependencies: ["SwiftGodotKit"]),
+        
         // This is a sample that I am porting
         .target(
             name: "Dodge",
