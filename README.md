@@ -101,7 +101,7 @@ repository):
 
 ```
 cd ../SwiftGodot/scripts
-sh -x make-libgodot.xcframework ../../SwiftGodot ../../libgodot /tmp/
+sh -x make-libgodot.framework ../../libgodot /tmp/
 ```
 
 Then you can reference that version of the libgodot.xcframework
