@@ -100,8 +100,8 @@ xcframework out of it, using the script in SwiftGodot (a peer to this
 repository):
 
 ```
-cd ../SwiftGodot/scripts
-sh -x make-libgodot.framework ../../libgodot /tmp/
+cd ../SwiftGodotKit/scripts
+sh -x make-libgodot.xcframework ../../SwiftGodot ../../libgodot /tmp/
 ```
 
 Then you can reference that version of the libgodot.xcframework
