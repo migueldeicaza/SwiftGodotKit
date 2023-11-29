@@ -50,6 +50,8 @@ func propInfo (from: GDictionary) -> PropInfo? {
 }
 
 func loadScene (scene: SceneTree) {
+    #if false
+    let r = GD.load(path: "res://Assets/Scancardium_2.0.ttf")
     let properties = ClassDB.classGetPropertyList (class: StringName ("Node2D"))
     print ("Elements: \(properties.count)")
     var a = GArray()
@@ -89,13 +91,13 @@ func loadScene (scene: SceneTree) {
             print ("    \(prefix)name=\(p.propertyName)/\(p.className) type=\(p.propertyType) hint=\(p.hint) \(hintStr) usage=\(p.usage)")
         }
     }
-
+    #endif
     let rootNode = Node3D()
     let camera = Camera3D ()
     camera.current = true
     camera.position = Vector3(x: 0, y: 0, z: 2)
     
-    rootNode.addChild(node: camera)
+    //rootNode.addChild(node: camera)
     
     func makeCuteNode (_ pos: Vector3) -> Node {
         let n = SpinningCube()

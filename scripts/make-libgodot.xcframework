@@ -1,11 +1,17 @@
 #!/bin/bash
+full=true
+if test x$1 = xquick; then
+    full=false
+    shift
+fi
 if test ! -e make-libgodot.xcframework; then
     echo this script needs to be executed from the SwiftGodotKit/scripts directory
     exit 1
 fi
 if test x$2 = x; then
-   echo usage is: make-libgodot.xcframework SwiftGodotDIR libgodotDIR OUTPUT_DIR
-   exit 1
+    echo usage is: make-libgodot.xcframework [quick] SwiftGodotDIR libgodotDIR OUTPUT_DIR
+    echo if you pass 'quick' it will not do a full build, just package a local build
+    exit 1
 fi
 SG=$1
 LG=$2
@@ -13,7 +19,7 @@ ODIR=$3
 intel=macpro
 arm=studio.localdomain
 dir=cvs/libgodot
-hash=1fc23bc7831b5dc559ec7d284437e62d6067f4f8
+hash=3a197cb8c0f12608959b7e091acb7e06e60ca2b9
 target_kind=template_debug
 build_base="scons platform=macos target=$target_kind library_type=shared_library debug_symbols=yes"
 
@@ -28,8 +34,10 @@ build() {
 
 arm_dylib=libgodot.macos.template_debug.arm64.dylib
 intel_dylib=libgodot.macos.template_debug.dev.x86_64.dylib
-build $intel "/usr/local/bin/$build_base dev_build=yes" $intel_dylib
-build $arm "/opt/homebrew/bin/$build_base vulkan_sdk_path=~/MoltenVK/" $arm_dylib
+if $full; then
+    build $intel "/usr/local/bin/$build_base dev_build=yes" $intel_dylib
+    build $arm "/opt/homebrew/bin/$build_base vulkan_sdk_path=~/MoltenVK/" $arm_dylib
+fi
 
 # Now make the xcframework
 rm -rf $ODIR/libgodot.xcframework
@@ -45,15 +53,24 @@ module libgodot {
     export *
 }
 EOF
-rm -rf libgodot.xcframework
-install_name_tool -id @rpath/libgodot.dylib $arm_dylib
-install_name_tool -id @rpath/libgodot.dylib $intel_dylib
-lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
+if $full; then
+    rm -rf libgodot.xcframework
+    install_name_tool -id @rpath/libgodot.dylib $arm_dylib
+    install_name_tool -id @rpath/libgodot.dylib $intel_dylib
+    lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
+else
+    rm -rf $ODIR/libgodot.xcframework
+    cp ../../libgodot/bin/$arm_dylib libgodot.dylib
+    install_name_tool -id @rpath/libgodot.dylib libgodot.dylib
+fi
 
-xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
-zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
-checksum=`swift package compute-checksum $ODIR/libgodot.xcframework.zip`
-
+if $full; then
+    xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
+    zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
+    checksum=`swift package compute-checksum $ODIR/libgodot.xcframework.zip`
+else
+    xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output $ODIR/libgodot.xcframework
+fi
 rm -rf /tmp/dir-$$
 exit 0
 

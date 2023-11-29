@@ -34,7 +34,8 @@ let package = Package(
         
             .executableTarget(
                 name: "TrivialSample",
-                dependencies: ["SwiftGodotKit"]
+                dependencies: ["SwiftGodotKit"],
+                resources: [.copy("Assets/Scancardium_2.0.ttf")]
             ),
         
             .executableTarget(
@@ -45,6 +46,7 @@ let package = Package(
         .target(
             name: "Dodge",
             dependencies: ["SwiftGodotKit", "libgodot"]),
+//        .binaryTarget(name: "libgodot", path: "libgodot.xcframework"),
         .binaryTarget (
             name: "libgodot",
             url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.0.1/libgodot.xcframework.zip",
