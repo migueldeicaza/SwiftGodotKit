@@ -49,8 +49,7 @@ func propInfo (from: GDictionary) -> PropInfo? {
                     usage: PropertyUsageFlags(rawValue: usage))
 }
 
-func loadScene (scene: SceneTree) {
-    #if false
+func second (scene: SceneTree) {
     let r = GD.load(path: "res://Assets/Scancardium_2.0.ttf")
     let properties = ClassDB.classGetPropertyList (class: StringName ("Node2D"))
     print ("Elements: \(properties.count)")
@@ -61,7 +60,7 @@ func loadScene (scene: SceneTree) {
     for x in a {
         print ("value is \(x)")
     }
-        
+    
     for dict in properties {
         guard let p = propInfo(from: dict) else {
             print ("Failed to load \(dict)")
@@ -91,13 +90,15 @@ func loadScene (scene: SceneTree) {
             print ("    \(prefix)name=\(p.propertyName)/\(p.className) type=\(p.propertyType) hint=\(p.hint) \(hintStr) usage=\(p.usage)")
         }
     }
-    #endif
+}
+
+func loadScene (scene: SceneTree) {
     let rootNode = Node3D()
     let camera = Camera3D ()
     camera.current = true
     camera.position = Vector3(x: 0, y: 0, z: 2)
     
-    //rootNode.addChild(node: camera)
+    rootNode.addChild(node: camera)
     
     func makeCuteNode (_ pos: Vector3) -> Node {
         let n = SpinningCube()
@@ -110,42 +111,13 @@ func loadScene (scene: SceneTree) {
     scene.root?.addChild(node: rootNode)
 }
 
-
+@Godot
 class SpinningCube: Node3D {
-    static let myFirstSignal = StringName ("MyFirstSignal")
-    static let printerSignal = StringName ("PrinterSignal")
-    
-    static var initClass: Bool = {
-        // This registers the signal
-        let s = ClassInfo<SpinningCube>(name: "SpinningCube")
-        s.registerSignal(name: SpinningCube.myFirstSignal, arguments: [])
-        
-        let printArgs = [
-            PropInfo(
-                propertyType: .string,
-                propertyName: StringName ("myArg"),
-                className: "SpinningCube",
-                hint: .flags,
-                hintStr: "Text",
-                usage: .default)
-        ]
-        
-        let x = Vector2(x: 10, y: 10)
-        let y = x * Int64 (24)
-        
-        return true
-    }()
-    
-    required init (nativeHandle: UnsafeRawPointer) {
-        super.init (nativeHandle: nativeHandle)
-    }
-    
-    required init () {
-        super.init ()
+
+    override func _ready() {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
-        _ = SpinningCube.initClass
     }
     
     override func _input (event: InputEvent) {
@@ -156,7 +128,7 @@ class SpinningCube: Node3D {
             print("MouseMotion: \(mouseMotion)")
         default:
             print (event)
-        }        
+        }
         
         guard event.isPressed () && !event.isEcho () else { return }
         print ("SpinningCube: event: isPressed ")
@@ -166,7 +138,6 @@ class SpinningCube: Node3D {
         rotateY(angle: delta)
     }
 }
-
 func registerTypes (level: GDExtension.InitializationLevel) {
     GD.printerr(arg1: Variant ("hello"))
     
