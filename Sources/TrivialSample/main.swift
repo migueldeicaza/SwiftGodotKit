@@ -10,6 +10,91 @@ import Foundation
 import SwiftGodot
 import SwiftGodotKit
 
+<<<<<<< HEAD
+=======
+//extension GArray: Sequence {
+//    public struct GArrayIterator: IteratorProtocol {
+//        public mutating func next() -> SwiftGodot.Variant? {
+//            idx += 1
+//            if idx < a.size() {
+//                return a[idx]
+//            }
+//            return nil
+//        }
+//        
+//        public typealias Element = Variant
+//        
+//        let a: GArray
+//        var idx = -1
+//        
+//        init (_ a: GArray) {
+//            self.a = a
+//        }
+//    }
+//    public func makeIterator() -> GArrayIterator {
+//        return GArrayIterator (self)
+//    }
+//}
+
+func propInfo (from: GDictionary) -> PropInfo? {
+    guard let name = from ["name"]?.description else { return nil }
+    guard let type = Int (from ["type"] ?? Variant (Nil())) else { return nil }
+    guard let className = from ["class_name"]?.description else { return nil }
+    guard let hint = Int (from ["hint"] ?? Variant (Nil())) else { return nil }
+    guard let hint_string = from ["hint_string"]?.description else { return nil }
+    guard let usage = Int (from ["usage"] ?? Variant (Nil())) else { return nil }
+    return PropInfo(propertyType: Variant.GType(rawValue: type)!,
+                    propertyName: StringName(stringLiteral: name),
+                    className: StringName (stringLiteral: className),
+                    hint: PropertyHint (rawValue: hint)!,
+                    hintStr: GString (stringLiteral: hint_string),
+                    usage: PropertyUsageFlags(rawValue: usage))
+}
+
+func second (scene: SceneTree) {
+    let r = GD.load(path: "res://Assets/Scancardium_2.0.ttf")
+    let properties = ClassDB.classGetPropertyList (class: StringName ("Node2D"))
+    print ("Elements: \(properties.count)")
+    var a = GArray()
+    a.append(value: Variant ("Hello"))
+    a.append(value: Variant ("Word"))
+    a.append(value: Variant ("Foo"))
+    for x in a {
+        print ("value is \(x)")
+    }
+    
+    for dict in properties {
+        guard let p = propInfo(from: dict) else {
+            print ("Failed to load \(dict)")
+            continue
+        }
+        if p.usage.contains(.group) {
+            print ("GROUP: \(p.propertyName)")
+            continue
+        } else if p.usage.contains(.subgroup) {
+            print ("Subgroup: \(p.hintStr)")
+        } else if p.usage.contains(.category) {
+            print ("Category")
+        } else {
+            let prefix: String
+            if p.usage == [] {
+                prefix = "SKIP: "
+                continue
+            } else {
+                prefix = ""
+            }
+            let hintStr: String
+            if p.hintStr != "" {
+                hintStr = "hintStr=\(p.hintStr)"
+            } else {
+                hintStr = ""
+            }
+            print ("    \(prefix)name=\(p.propertyName)/\(p.className) type=\(p.propertyType) hint=\(p.hint) \(hintStr) usage=\(p.usage)")
+        }
+    }
+}
+
+>>>>>>> 4.2
 func loadScene (scene: SceneTree) {
     let rootNode = Node3D()
     let camera = Camera3D ()
@@ -32,7 +117,11 @@ func loadScene (scene: SceneTree) {
 @Godot
 class SpinningCube: Node3D {
 
+<<<<<<< HEAD
     override func _ready () {
+=======
+    override func _ready() {
+>>>>>>> 4.2
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
@@ -46,7 +135,7 @@ class SpinningCube: Node3D {
             print("MouseMotion: \(mouseMotion)")
         default:
             print (event)
-        }        
+        }
         
         guard event.isPressed () && !event.isEcho () else { return }
         print ("SpinningCube: event: isPressed ")
@@ -56,7 +145,6 @@ class SpinningCube: Node3D {
         rotateY(angle: delta)
     }
 }
-
 func registerTypes (level: GDExtension.InitializationLevel) {
     switch level {
     case .scene:
