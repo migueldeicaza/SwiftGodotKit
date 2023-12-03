@@ -68,7 +68,6 @@ func second (scene: SceneTree) {
     }
 }
 
->>>>>>> 4.2
 func loadScene (scene: SceneTree) {
     let rootNode = Node3D()
     let camera = Camera3D ()
@@ -91,11 +90,7 @@ func loadScene (scene: SceneTree) {
 @Godot
 class SpinningCube: Node3D {
 
-<<<<<<< HEAD
-    override func _ready () {
-=======
     override func _ready() {
->>>>>>> 4.2
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
