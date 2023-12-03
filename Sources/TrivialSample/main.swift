@@ -10,32 +10,6 @@ import Foundation
 import SwiftGodot
 import SwiftGodotKit
 
-<<<<<<< HEAD
-=======
-//extension GArray: Sequence {
-//    public struct GArrayIterator: IteratorProtocol {
-//        public mutating func next() -> SwiftGodot.Variant? {
-//            idx += 1
-//            if idx < a.size() {
-//                return a[idx]
-//            }
-//            return nil
-//        }
-//        
-//        public typealias Element = Variant
-//        
-//        let a: GArray
-//        var idx = -1
-//        
-//        init (_ a: GArray) {
-//            self.a = a
-//        }
-//    }
-//    public func makeIterator() -> GArrayIterator {
-//        return GArrayIterator (self)
-//    }
-//}
-
 func propInfo (from: GDictionary) -> PropInfo? {
     guard let name = from ["name"]?.description else { return nil }
     guard let type = Int (from ["type"] ?? Variant (Nil())) else { return nil }
