@@ -111,4 +111,8 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
     withUnsafePtr(strings: copy) { ptr in
         godot_main (Int32 (copy.count), ptr)
     }
+
+    loadSceneCb = nil
+    loadProjectSettingsCb = nil
+    initHookCb = nil
 }
