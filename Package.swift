@@ -19,7 +19,7 @@ let package = Package(
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/EstevanBR/SwiftGodot", branch: "main")
+        .package(url: "https://github.com/EstevanBR/SwiftGodot", branch: "estevanBR")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
