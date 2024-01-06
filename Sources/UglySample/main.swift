@@ -56,9 +56,6 @@ func loadScene (scene: SceneTree) {
     }
     for node in rootNode.getChildren() {
         print ("rootNode's node is a \(node)")
-        let r = GD.absf(x: -10)
-        
-        print (r)
     }
     
     print ("ClassList:")

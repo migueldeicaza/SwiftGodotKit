@@ -8,14 +8,16 @@
 import Foundation
 import SwiftGodot
 
+@Godot
 class Player: Area2D {
     @BindNode var collissionShape2D: CollisionShape2D
     @BindNode var animatedSprite: AnimatedSprite2D
     
     // TODO: Flag this for export
     var speed: Double = 400
-    var screenSize: Vector2
-    
+    var screenSize: Vector2 = Vector2(x: 0, y: 0)
+
+    init () {}
     override func _ready() {
         // TODO: global get_viewport_rect
         // screenSize =
