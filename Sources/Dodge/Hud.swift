@@ -8,19 +8,12 @@
 import Foundation
 import SwiftGodot
 
+@Godot
 class Hud: CanvasLayer {
     @BindNode var messageLabel: Label
     @BindNode var messageTimer: SwiftGodot.Timer
     @BindNode var startButton: Button
     @BindNode var scoreLabel: Label
-    
-    required init () {
-        super.init ()
-    }
-    
-    required init(nativeHandle: UnsafeRawPointer) {
-        fatalError("init(nativeHandle:) has not been implemented")
-    }
     
     func showMessage (_ text: String) {
         messageLabel.text = text
@@ -46,12 +39,14 @@ class Hud: CanvasLayer {
         scoreLabel.text = "\(score)"
     }
     
-    public func on_StartButton_pressed () {
+    @Callable
+    func _on_StartButton_pressed () {
         startButton.hide()
         emitSignal ("StartGame")
     }
     
-    public func on_MessageTimer_timeout () {
+    @Callable
+    func _on_MessageTimer_timeout () {
         messageLabel.hide()
     }
 }

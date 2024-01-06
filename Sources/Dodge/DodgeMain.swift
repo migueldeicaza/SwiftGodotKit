@@ -8,6 +8,7 @@
 import Foundation
 import SwiftGodot
 
+@Godot
 class Main: Node {
     @BindNode var startTimer: SwiftGodot.Timer
     @BindNode var scoreTimer: SwiftGodot.Timer
@@ -18,27 +19,26 @@ class Main: Node {
     @BindNode var startPosition: Marker2D
     @BindNode var player: Player
     
-    // TODO: @Export this
-    var mobScene = PackedScene()
+    @Export var mob_scene: PackedScene = PackedScene()
     
     var score: Double = 0
     
-    required init () {
-        super.init()
+    @Callable
+    func game_over () {
+        // TODO: get_tree().call_group(&"mobs", &"queue_free")
+        scoreTimer.stop()
+        mobTimer.stop()
+        Task {
+            await hud.showGameOver ()
+            Task { @MainActor in
+                music.stop ()
+                deathSound.play ()
+            }
+        }
     }
     
-    required init(nativeHandle: UnsafeRawPointer) {
-        fatalError()
-    }
-    
-    func gameOver () async {
-        mobTimer.stop ()
-        await hud.showGameOver ()
-        music.stop ()
-        deathSound.play (fromPosition: 0.0)
-    }
-    
-    func newGame () {
+    @Callable
+    func new_game () {
         score = 0
         player.start (pos: startPosition.position)
         startTimer.start ()
@@ -47,22 +47,27 @@ class Main: Node {
         music.play()
     }
 
-    func on_ScoreTimer_timeout () {
+    @Callable
+    func _on_ScoreTimer_timeout () {
         score += 1
         hud.updateScore(score: score)
     }
     
-    func on_StartTimer_timeout () {
+    @Callable
+    func _on_StartTimer_timeout () {
         mobTimer.start()
         scoreTimer.start ()
     }
     
-    func on_MobTimer_timeout() {
-        guard let mob = mobScene.instantiate() as? RigidBody2D else {
+    @Callable
+    func _on_MobTimer_timeout() {
+        // Create a new instance of the Mob scene.
+        guard let mob = mob_scene.instantiate() as? RigidBody2D else {
             print ("MobScene is not a RigitBody2D")
             return
         }
         
+        // Choose a random location on Path2D.
         guard let mobSpawnLocation = getNode (path: "MobPath/MobSpawnLocation") as? PathFollow2D else {
             print ("Error")
             return
@@ -86,6 +91,5 @@ class Main: Node {
 
         // Spawn the mob by adding it to the Main scene.
         addChild(node: mob)
-
     }
 }

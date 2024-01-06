@@ -13,7 +13,7 @@ ODIR=$3
 intel=macpro
 arm=studio.localdomain
 dir=cvs/libgodot
-hash=1fc23bc7831b5dc559ec7d284437e62d6067f4f8
+hash=05eb261a0231524db895de5bf2dd8bfcbf7db85d
 target_kind=template_debug
 build_base="scons platform=macos target=$target_kind library_type=shared_library debug_symbols=yes"
 
@@ -22,7 +22,7 @@ build() {
     build=$2
     file=$3
     echo "starting build on $host"
-    #ssh -A $host "cd $dir && git pull --rebase && git reset --hard $hash && rm -rf bin && $build"
+    ssh -A $host "cd $dir && git pull --rebase && git reset --hard $hash && rm -rf bin && $build"
     scp $host:$dir/bin/$file $file
 }
 

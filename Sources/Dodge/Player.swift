@@ -17,7 +17,6 @@ class Player: Area2D {
     var speed: Double = 400
     var screenSize: Vector2 = Vector2(x: 0, y: 0)
 
-    init () {}
     override func _ready() {
         // TODO: global get_viewport_rect
         // screenSize =

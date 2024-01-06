@@ -13,13 +13,13 @@ let package = Package(
         .library(
             name: "SwiftGodotKit",
             targets: ["SwiftGodotKit"]),
-        .executable(name: "Dodge", targets: ["Dodge"]),
+        //.executable(name: "Dodge", targets: ["Dodge"]),
         .executable(name: "UglySample", targets: ["UglySample"]),
         .executable(name: "Properties", targets: ["Properties"]),
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "7c932b45b6683b4d1307d67a5969a65a5ce2ad3d")
+        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "d6a02db8ad4907f8de8a216c40fb083d8525d8e6")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -41,13 +41,13 @@ let package = Package(
                 dependencies: ["SwiftGodotKit"]),
         
         // This is a sample that I am porting
-        .target(
-            name: "Dodge",
-            dependencies: ["SwiftGodotKit", "libgodot"]),
+//        .target(
+//            name: "Dodge",
+//            dependencies: ["SwiftGodotKit", "libgodot"]),
         .binaryTarget (
             name: "libgodot",
-            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.0.1/libgodot.xcframework.zip",
-            checksum: "bb6ec0946311a71f1eba7ad393c0adf7b8f34a2389d8234ff500b2764b0c6ba5"
+            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.1.0/libgodot.xcframework.zip",
+            checksum: "a90f2082714ac652c8aa6c1546a707c00a362b855071afa73a4443ffd96dcea0"
         ),
         .testTarget(
             name: "SwiftGodotKitTests",
