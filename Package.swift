@@ -13,13 +13,13 @@ let package = Package(
         .library(
             name: "SwiftGodotKit",
             targets: ["SwiftGodotKit"]),
-        //.library(name: "Dodge", targets: ["Dodge"]),
+        .executable(name: "Dodge", targets: ["Dodge"]),
         .executable(name: "UglySample", targets: ["UglySample"]),
         .executable(name: "Properties", targets: ["Properties"]),
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "d6a02db8ad4907f8de8a216c40fb083d8525d8e6")
+        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "7c932b45b6683b4d1307d67a5969a65a5ce2ad3d")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -41,9 +41,9 @@ let package = Package(
                 dependencies: ["SwiftGodotKit"]),
         
         // This is a sample that I am porting
-//        .target(
-//            name: "Dodge",
-//            dependencies: ["SwiftGodotKit", "libgodot"]),
+        .target(
+            name: "Dodge",
+            dependencies: ["SwiftGodotKit", "libgodot"]),
         .binaryTarget (
             name: "libgodot",
             url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.0.1/libgodot.xcframework.zip",
