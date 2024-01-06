@@ -10,7 +10,8 @@ import SwiftGodotKit
 import SwiftGodot
 
 func loadScene (scene: SceneTree) {
-    scene.changeSceneToFile (path: "res://Main.tscn")
+    let result = scene.changeSceneToFile (path: "res://Main.tscn")
+    print ("load scene result: \(result)")
 }
 
 func registerTypes (level: GDExtension.InitializationLevel) {
@@ -25,4 +26,8 @@ func registerTypes (level: GDExtension.InitializationLevel) {
     }
 }
 
-runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })
+guard let projectPath = Bundle.module.path(forResource: "Project", ofType: nil) else {
+    fatalError("Could not load resource path")
+}
+
+runGodot(args: ["--path", projectPath], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })

@@ -14,6 +14,7 @@ class Hud: CanvasLayer {
     @BindNode var messageTimer: SwiftGodot.Timer
     @BindNode var startButton: Button
     @BindNode var scoreLabel: Label
+    #signal("start_game")
     
     func showMessage (_ text: String) {
         messageLabel.text = text
@@ -42,7 +43,7 @@ class Hud: CanvasLayer {
     @Callable
     func _on_StartButton_pressed () {
         startButton.hide()
-        emitSignal ("StartGame")
+        emit (signal: Hud.startGame)
     }
     
     @Callable

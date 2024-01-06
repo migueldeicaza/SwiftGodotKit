@@ -16,8 +16,7 @@ class Mob: RigidBody2D {
     var maxSpeed: Float = 250
     
     override func _ready() {
-        
-        // animatedSprite2D.setPlaying = true
+        animatedSprite2D.play()
         let mobTypes = animatedSprite2D.spriteFrames?.getAnimationNames()
         
         let randomPick = Int.random(in: 0..<(Int (mobTypes?.size() ?? 1)))
