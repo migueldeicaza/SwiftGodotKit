@@ -34,7 +34,7 @@ collision_mask = 0
 gravity_scale = 0.0
 script = null
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+[node name="animatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(0.75, 0.75)
 frames = SubResource( "1" )
 animation = &"walk"
