@@ -10,7 +10,7 @@ import SwiftGodot
 
 @Godot
 class Player: Area2D {
-    @BindNode var collissionShape2D: CollisionShape2D
+    @BindNode var collisionShape2D: CollisionShape2D
     @BindNode var animatedSprite2D: AnimatedSprite2D
     @BindNode var trail: GPUParticles2D
     
@@ -26,7 +26,7 @@ class Player: Area2D {
     func start (pos: Vector2) {
         position = pos
         show ()
-        collissionShape2D.disabled = false
+        collisionShape2D.disabled = false
     }
     
     // TODO: register signal hit
@@ -35,7 +35,7 @@ class Player: Area2D {
         super.hide ()
         super.emitSignal("hit")
         // Must be deferred as we can't change physics properties on a physics callback.
-        collissionShape2D.setDeferred(property: StringName ("disabled"), value: Variant (true))
+        collisionShape2D.setDeferred(property: StringName ("disabled"), value: Variant (true))
     }
     
     override func _process(delta: Double) {
@@ -84,7 +84,7 @@ class Player: Area2D {
         emit(signal: Player.hit)
            
         // Must be deferred as we can't change physics properties on a physics callback.
-        collissionShape2D.setDeferred(property: "disabled", value: Variant (true))
+        collisionShape2D.setDeferred(property: "disabled", value: Variant (true))
     }
 }
 
