@@ -8,7 +8,7 @@ action = &"start_game"
 events = [SubResource("InputEventAction_fopy7")]
 
 [node name="hud" type="CanvasLayer"]
-script = ExtResource("1")
+script = null
 
 [node name="scoreLabel" type="Label" parent="."]
 anchors_preset = 10

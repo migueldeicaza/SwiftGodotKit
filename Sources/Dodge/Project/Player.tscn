@@ -55,7 +55,7 @@ color_ramp = SubResource("4")
 
 [node name="player" type="Area2D"]
 z_index = 10
-script = ExtResource("1")
+script = null
 
 [node name="animatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(0.5, 0.5)
