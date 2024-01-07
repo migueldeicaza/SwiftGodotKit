@@ -10,8 +10,6 @@ import SwiftGodotKit
 import SwiftGodot
 
 func loadScene (scene: SceneTree) {
-    let result = scene.changeSceneToFile (path: "res://Main.tscn")
-    print ("load scene result: \(result)")
 }
 
 func registerTypes (level: GDExtension.InitializationLevel) {
