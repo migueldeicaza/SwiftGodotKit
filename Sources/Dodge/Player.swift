@@ -29,7 +29,6 @@ class Player: Area2D {
         collisionShape2D.disabled = false
     }
     
-    // TODO: register signal hit
     func on_player_body_entered (body: PhysicsBody2D) {
         // player dissapears after being hit
         super.hide ()
