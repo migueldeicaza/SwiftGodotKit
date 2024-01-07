@@ -53,7 +53,7 @@ gravity = Vector3(0, 0, 0)
 scale_curve = SubResource("6")
 color_ramp = SubResource("4")
 
-[node name="player" type="Area2D"]
+[node name="player" type="Player"]
 z_index = 10
 script = null
 

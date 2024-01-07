@@ -11,7 +11,7 @@ import SwiftGodot
 @Godot
 class Player: Area2D {
     @BindNode var collissionShape2D: CollisionShape2D
-    @BindNode var animatedSprite: AnimatedSprite2D
+    @BindNode var animatedSprite2D: AnimatedSprite2D
     @BindNode var trail: GPUParticles2D
     
     @Export var speed: Double = 400
@@ -56,23 +56,23 @@ class Player: Area2D {
         
         if velocity.length() > 0.0 {
             velocity = velocity.normalized() * speed
-            animatedSprite.play()
+            animatedSprite2D.play()
         } else {
-            animatedSprite.stop()
+            animatedSprite2D.stop()
         }
         let pos = position + velocity * delta
         position = pos.clamp(min: Vector2.zero, max: screenSize)
                 
         if velocity.x != 0.0 {
-            animatedSprite.animation = "right"
+            animatedSprite2D.animation = "right"
             
-            animatedSprite.flipV = false
+            animatedSprite2D.flipV = false
             trail.rotation = 0
-            animatedSprite.flipH = velocity.x < 0.0
+            animatedSprite2D.flipH = velocity.x < 0.0
         } else if velocity.y != 0.0 {
-            animatedSprite.animation = "up"
+            animatedSprite2D.animation = "up"
             
-            animatedSprite.flipV = velocity.y > 0.0
+            animatedSprite2D.flipV = velocity.y > 0.0
             trail.rotation = velocity.y > 0 ? .pi : 0
         }
     }

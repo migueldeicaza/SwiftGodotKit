@@ -7,7 +7,7 @@ action = &"start_game"
 [sub_resource type="Shortcut" id="4"]
 events = [SubResource("InputEventAction_fopy7")]
 
-[node name="hud" type="CanvasLayer"]
+[node name="hud" type="Hud"]
 script = null
 
 [node name="scoreLabel" type="Label" parent="."]
