@@ -17,7 +17,7 @@ class Player: Area2D {
     @Export var speed: Double = 400
     var screenSize: Vector2 = Vector2(x: 0, y: 0)
     #signal("hit")
-    
+
     override func _ready() {
         screenSize = getViewportRect().size
         hide()
@@ -41,7 +41,7 @@ class Player: Area2D {
         var velocity = Vector2(x: 0, y: 0)
 
         if Input.isActionPressed(action: "ui_right") {
-            velocity = velocity + Vector2 (x: 0, y: 0)
+            velocity = velocity + Vector2.right
         }
         if Input.isActionPressed(action: "ui_left") {
             velocity = velocity + Vector2.left
@@ -61,7 +61,7 @@ class Player: Area2D {
         }
         let pos = position + velocity * delta
         position = pos.clamp(min: Vector2.zero, max: screenSize)
-                
+        
         if velocity.x != 0.0 {
             animatedSprite2D.animation = "right"
             

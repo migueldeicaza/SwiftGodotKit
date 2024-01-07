@@ -55,15 +55,19 @@ class Main: Node {
     
     @Callable
     func _on_StartTimer_timeout () {
+        add = true
         mobTimer.start()
         scoreTimer.start ()
     }
     
+    var add = true
     @Callable
     func _on_MobTimer_timeout() {
+        if !add { return }
+        add = false
         // Create a new instance of the Mob scene.
         guard let mob = mob_scene.instantiate() as? RigidBody2D else {
-            print ("MobScene is not a RigitBody2D")
+            print ("MobScene is not a RigidBody2D")
             return
         }
         
