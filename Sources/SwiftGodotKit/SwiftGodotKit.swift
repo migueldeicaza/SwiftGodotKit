@@ -23,7 +23,7 @@ func projectSettingsBind (_ x: UnsafeMutableRawPointer?) {
 func embeddedExtensionInit (userData: UnsafeMutableRawPointer?, l: GDExtensionInitializationLevel) {
     print ("SwiftEmbed: Register our types here, level: \(l)")
     if let cb = initHookCb {
-        cb (GDExtension.InitializationLevel(rawValue: Int (l.rawValue))!)
+        cb (GDExtension.InitializationLevel(rawValue: Int64 (Int (l.rawValue)))!)
     }
 }
 
