@@ -51,8 +51,5 @@ let package = Package(
             url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.1.0/libgodot.xcframework.zip",
             checksum: "a90f2082714ac652c8aa6c1546a707c00a362b855071afa73a4443ffd96dcea0"
         ),
-        .testTarget(
-            name: "SwiftGodotKitTests",
-            dependencies: ["SwiftGodotKit"]),
     ]
 )
