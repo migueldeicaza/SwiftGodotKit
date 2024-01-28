@@ -13,7 +13,7 @@ let package = Package(
         .library(
             name: "SwiftGodotKit",
             targets: ["SwiftGodotKit"]),
-        .library(name: "Dodge", targets: ["Dodge"]),
+        .executable(name: "Dodge", targets: ["Dodge"]),
         .executable(name: "UglySample", targets: ["UglySample"]),
         .executable(name: "Properties", targets: ["Properties"]),
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
@@ -26,31 +26,45 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "SwiftGodotKit",
-            dependencies: ["SwiftGodot", "libgodot"]),
+            dependencies: [
+                "SwiftGodot",
+                .target(name: "binary_libgodot", condition: .when(platforms: [.macOS])),
+                .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
+            ]
+        ),
         
-            .executableTarget(
-                name: "UglySample",
-                dependencies: ["SwiftGodotKit"]),
+        .executableTarget(
+            name: "UglySample",
+            dependencies: ["SwiftGodotKit"]
+        ),
         
-            .executableTarget(
-                name: "TrivialSample",
-                dependencies: ["SwiftGodotKit"]),
-            .executableTarget(
-                name: "Properties",
-                dependencies: ["SwiftGodotKit"]),
+        .executableTarget(
+            name: "TrivialSample",
+            dependencies: ["SwiftGodotKit"]
+        ),
+
+        .executableTarget(
+            name: "Properties",
+            dependencies: ["SwiftGodotKit"]
+        ),
         
         // This is a sample that I am porting
         .target(
             name: "Dodge",
-            dependencies: ["SwiftGodotKit", "libgodot"]),
-//        .binaryTarget(name: "libgodot", path: "libgodot.xcframework"),
-        .binaryTarget (
-            name: "libgodot",
-            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v4.1.99/libgodot.xcframework.zip",
-            checksum: "c8ddf62be6c00eacc36bd2dafe8d424c0b374833efe80546f6ee76bd27cee84e"
+            dependencies: [
+                "SwiftGodotKit",
+                .target(name: "binary_libgodot", condition: .when(platforms: [.macOS])),
+                .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
+            ],
+            resources: [.copy ("Project")]
         ),
-        .testTarget(
-            name: "SwiftGodotKitTests",
-            dependencies: ["SwiftGodotKit"]),
+        .binaryTarget (
+            name: "binary_libgodot",
+            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/v1.1.0/libgodot.xcframework.zip",
+            checksum: "a90f2082714ac652c8aa6c1546a707c00a362b855071afa73a4443ffd96dcea0"
+        ),
+        .systemLibrary(
+            name: "libgodot"
+        ),
     ]
 )

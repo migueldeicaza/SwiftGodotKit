@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "StandaloneExample",
     platforms: [
-        .macOS(.v10_15),
+        .macOS(.v13)
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -16,7 +16,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "1359586f2332d500d30661158e062a0e9f97751c"),
-        .package(url: "https://github.com/migueldeicaza/SwiftGodotKit", revision: "7cc075bf2ef51546c28d4bbc27156cbf627d08a8")
+        .package(url: "https://github.com/migueldeicaza/SwiftGodotKit", revision: "a7f90ce4fa3e20fa95b57f1d95704445e5844d3d")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
