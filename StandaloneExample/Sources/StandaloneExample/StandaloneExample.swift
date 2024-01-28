@@ -29,14 +29,9 @@ func loadScene (scene: SceneTree) {
     scene.root?.addChild(node: rootNode)
 }
 
-
+@Godot
 class SpinningCube: Node3D {
-    required init (nativeHandle: UnsafeRawPointer) {
-        super.init (nativeHandle: nativeHandle)
-    }
-    
-    required init () {
-        super.init ()
+    override func _ready () {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)

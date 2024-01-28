@@ -33,14 +33,9 @@ func loadScene (scene: SceneTree) {
     scene.root?.addChild(node: rootNode)
 }
 
-
+@Godot
 class SpinningCube: Node3D {
-    required init (nativeHandle: UnsafeRawPointer) {
-        super.init (nativeHandle: nativeHandle)
-    }
-    
-    required init () {
-        super.init ()
+    override func _ready () {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
         addChild(node: meshRender)
@@ -100,7 +95,7 @@ xcframework out of it, using the script in SwiftGodot (a peer to this
 repository):
 
 ```
-cd ../SwiftGodot/scripts
+cd ../SwiftGodotKit/scripts
 sh -x make-libgodot.xcframework ../../SwiftGodot ../../libgodot /tmp/
 ```
 

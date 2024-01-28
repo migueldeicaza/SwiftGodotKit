@@ -87,26 +87,27 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
     loadProjectSettingsCb = loadProjectSettings
     initHookCb = initHook
     
-    libgodot_gdextension_bind { godotGetProcAddr, libraryPtr, extensionInit in
-        if let godotGetProcAddr {
-            let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
-            setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
-            library = OpaquePointer (libraryPtr)!
-            extensionInit?.pointee = GDExtensionInitialization(
-                minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
-                userdata: nil,
-                initialize: embeddedExtensionInit,
-                deinitialize: embeddedExtensionDeinit)
-            return 1
-        }
-        
-        return 0
-    } _: { startup in
-        if let cb = loadSceneCb, let ptr = startup {
-            cb (SceneTree.createFrom(nativeHandle: ptr))
+    if true {
+        libgodot_gdextension_bind { godotGetProcAddr, libraryPtr, extensionInit in
+            if let godotGetProcAddr {
+                let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
+                setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
+                library = OpaquePointer (libraryPtr)!
+                extensionInit?.pointee = GDExtensionInitialization(
+                    minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
+                    userdata: nil,
+                    initialize: embeddedExtensionInit,
+                    deinitialize: embeddedExtensionDeinit)
+                return 1
+            }
+            
+            return 0
+        } _: { startup in
+            if let cb = loadSceneCb, let ptr = startup {
+                cb (SceneTree.createFrom(nativeHandle: ptr))
+            }
         }
     }
-
     //libgodot_bind(initBind, sceneBind, projectSettingsBind)
     var copy = args
     copy.insert("SwiftGodotKit", at: 0)
@@ -116,4 +117,8 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
     withUnsafePtr(strings: copy) { ptr in
         godot_main (Int32 (copy.count), ptr)
     }
+
+    loadSceneCb = nil
+    loadProjectSettingsCb = nil
+    initHookCb = nil
 }
