@@ -50,7 +50,7 @@ let package = Package(
         ),
         
         // This is a sample that I am porting
-        .target(
+        .executableTarget(
             name: "Dodge",
             dependencies: [
                 "SwiftGodotKit",
