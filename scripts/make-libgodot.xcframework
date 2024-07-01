@@ -12,33 +12,42 @@ LG=$2
 ODIR=$3
 intel=macpro
 arm=studio.localdomain
-dir=cvs/libgodot
-hash=05eb261a0231524db895de5bf2dd8bfcbf7db85d
+arm2=localhost
+dir=cvs/libgodot-4.3
+hash=17cb62c67e84e568270b168e416f0e69d7e68a58
 target_kind=template_debug
-build_base="scons platform=macos target=$target_kind library_type=shared_library debug_symbols=yes"
+build_base="scons target=$target_kind library_type=shared_library debug_symbols=yes"
 
 build() {
     host=$1
     build=$2
     file=$3
     echo "starting build on $host"
-    ssh -A $host "cd $dir && git pull --rebase && git reset --hard $hash && rm -rf bin && $build"
+    ssh -A $host "cd $dir && git fetch && git reset --hard $hash && rm -rf bin && $build"
     scp $host:$dir/bin/$file $file
 }
 
-arm_dylib=libgodot.macos.template_debug.arm64.dylib
-intel_dylib=libgodot.macos.template_debug.dev.x86_64.dylib
-build $intel "/usr/local/bin/$build_base dev_build=yes" $intel_dylib
-build $arm "/opt/homebrew/bin/$build_base vulkan_sdk_path=~/MoltenVK/" $arm_dylib
+arm_dylib=libgodot.macos.$target_kind.arm64.dylib
+intel_dylib=libgodot.macos.$target_kind.dev.x86_64.dylib
+ios_lib=libgodot.ios.$target_kind.dev.arm64.a
+iossim_lib=libgodot.ios.$target_kind.dev.arm64.simulator.a
+iossimx86_lib=libgodot.ios.$target_kind.dev.x86_64.simulator.a
+
+if test x$SKIP = x; then
+  build $intel "/usr/local/bin/$build_base platform=macos dev_build=yes" $intel_dylib
+  build $arm "/opt/homebrew/bin/$build_base platform=macos vulkan_sdk_path=~/MoltenVK/" $arm_dylib
+  build $arm "/opt/homebrew/bin/$build_base platform=ios vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $ios_lib
+  build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossim_lib
+  build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes arch=x86_64 vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossimx86_lib
+fi
 
 # Now make the xcframework
 rm -rf $ODIR/libgodot.xcframework
 rm -rf $ODIR/libgodot.xcframework.zip
 tmp=/tmp/dir-$$
 mkdir $tmp
-echo '#define LIBRARY_ENABLED' > $tmp/libgodot.h
 cp $SG/Sources/GDExtension/include/gdextension_interface.h $tmp/gdextension_interface.h
-sed -e 's#core/extension/gdextension#gdextension#' -e 's/bool/int/' < $LG/core/libgodot/libgodot.h >> $tmp/libgodot.h
+cp $LG/core/extension/libgodot.h $tmp/libgodot.h
 cat > $tmp/module.modulemap << EOF
 module libgodot {
     header "libgodot.h"
@@ -46,15 +55,17 @@ module libgodot {
 }
 EOF
 rm -rf libgodot.xcframework
+rm -rf libgodot_ios.xcframework
 install_name_tool -id @rpath/libgodot.dylib $arm_dylib
 install_name_tool -id @rpath/libgodot.dylib $intel_dylib
 lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
-
+lipo -create -output libgodotSim.a -arch arm64 $iossim_lib -arch x86_64 $iossimx86_lib
 xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
+xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output libgodot_ios.xcframework
 zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
 checksum=`swift package compute-checksum $ODIR/libgodot.xcframework.zip`
 
-rm -rf /tmp/dir-$$
+#rm -rf /tmp/dir-$$
 exit 0
 
 

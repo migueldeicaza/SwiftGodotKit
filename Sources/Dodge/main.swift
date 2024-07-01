@@ -28,4 +28,4 @@ guard let projectPath = Bundle.module.path(forResource: "Project", ofType: nil) 
     fatalError("Could not load resource path")
 }
 
-runGodot(args: ["--path", projectPath], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })
+//runGodot(args: ["--path", projectPath], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })

@@ -22,5 +22,5 @@ func registerTypes (level: GDExtension.InitializationLevel) {
 
 func main () {
     print ("start")
-    runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })
+    //runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })
 }

@@ -225,4 +225,4 @@ func loadTwo (scene: SceneTree) {
     scene.root?.addChild(node: rootNode)
 }
 
-runGodot(args: [], initHook: registerTypes, loadScene: loadTwo, loadProjectSettings: loadProject)
+//runGodot(args: [], initHook: registerTypes, loadScene: loadTwo, loadProjectSettings: loadProject)
