@@ -64,12 +64,40 @@ struct ContentView: View {
                 GodotAppView()
                 VStack {
                     GodotWindow { sub in
+                        let ctr = VBoxContainer()
+                        ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
+                        sub.addChild(node: ctr)
                         
+                        let button1 = Button()
+                        button1.text = "SubWindow 1"
+                        let button2 = Button()
+                        button2.text = "Another Button"
+                        ctr.addChild(node: button1)
+                        ctr.addChild(node: button2)
                     }
                     GodotWindow { sub in
+                        let ctr = VBoxContainer()
+                        ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
+                        sub.addChild(node: ctr)
                         
+                        let button1 = Button()
+                        button1.text = "SubWindow 2"
+                        let button2 = Button()
+                        button2.text = "Another Button 2"
+                        ctr.addChild(node: button1)
+                        ctr.addChild(node: button2)
                     }
                     GodotWindow { sub in
+                        let ctr = VBoxContainer()
+                        ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
+                        sub.addChild(node: ctr)
+                        
+                        let button1 = Button()
+                        button1.text = "SubWindow 3"
+                        let button2 = Button()
+                        button2.text = "Another Button 3"
+                        ctr.addChild(node: button1)
+                        ctr.addChild(node: button2)
                     }
                 }
             }

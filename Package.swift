@@ -44,7 +44,11 @@ let package = Package(
         
         .executableTarget(
             name: "TrivialSample",
-            dependencies: ["SwiftGodotKit"]
+            dependencies: ["SwiftGodotKit"],
+            
+            // This line does not seem to do anything in Xcode, so you need to manually
+            // copy main.pck and make it available from somwehere else
+            resources: [.copy("main.pck")]
         ),
 
         .executableTarget(

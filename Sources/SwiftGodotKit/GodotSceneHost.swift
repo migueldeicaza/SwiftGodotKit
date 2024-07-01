@@ -58,7 +58,7 @@ public class GodotSceneHost: ObservableObject {
 //            #if os(macOS)
 //            "--display-driver", "embedded"
 //            #else
-            "--display-driver", "macos"
+            "--display-driver", "embedded"
         ]
         args.append(contentsOf: extraArgs)
        
