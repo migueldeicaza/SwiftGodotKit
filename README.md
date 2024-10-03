@@ -1,6 +1,7 @@
 SwiftGodotKit provides a way of embedding Godot into an existing Swift
 application and driving Godot from Swift, without having to use an
-extension.
+extension.   This is a companion to [SwiftGodot](https://github.com/migueldeicaza/SwiftGodot) which
+provides the API binding to the Godot API.
 
 Take a look at the `TrivialSample` here to see how it works.
 
