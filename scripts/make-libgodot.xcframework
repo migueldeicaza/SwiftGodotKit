@@ -11,9 +11,11 @@ SG=$1
 LG=$2
 ODIR=$3
 intel=macpro
-arm=studio.localdomain
-dir=cvs/libgodot
-hash=05eb261a0231524db895de5bf2dd8bfcbf7db85d
+arm=studio.local
+
+# This is the migueldeicaza/libgodot libgodot-4.3-old-style branch
+dir=cvs/libgodot-4.3
+hash=7e451cc34600698bc84944d1c835a48b2f6c70a2
 target_kind=template_debug
 build_base="scons platform=macos target=$target_kind library_type=shared_library debug_symbols=yes"
 
@@ -51,8 +53,9 @@ install_name_tool -id @rpath/libgodot.dylib $intel_dylib
 lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
 
 xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
-zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
+ditto -c -k --sequesterRsrc --keepParent libgodot.xcframework $ODIR/libgodot.xcframework.zip
 checksum=`swift package compute-checksum $ODIR/libgodot.xcframework.zip`
+echo checksum: $checksum
 
 rm -rf /tmp/dir-$$
 exit 0
