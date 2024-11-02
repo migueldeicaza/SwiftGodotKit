@@ -6,14 +6,17 @@
 import SwiftUI
 import SwiftGodot
 
-/// The GodotSceneHost loads a single scene from a Godot pack file, when the scene is
-/// created, the `instance` field will be set to a value.
-public class GodotSceneHost: ObservableObject {
+/// You create a single Godot App per application, this contains your game PCK
+public class GodotApp: ObservableObject {
     let path: String
     let renderingDriver: String
     let renderingMethod: String
     let extraArgs: [String]
     let maxTouchCount = 32
+    var pendingStart = Set<NSGodotAppView>()
+    var pendingLayout = Set<NSGodotAppView>()
+    var pendingWindow = Set<NSGodotWindow>()
+
     #if os(iOS)
     var touches: [UITouch?] = []
     #endif
@@ -23,28 +26,28 @@ public class GodotSceneHost: ObservableObject {
   
     /// Initializes Godot to render a scene.
     /// - Parameters:
-    ///  - scene: the name of the scene file, usually something like "game.pck"
+    ///  - packFile: the name of the pack file in the godotPackPath.
     ///  - godotPackPath: the directory where a scene can be created from, if it is not
     /// provided, this will try the `Bundle.main.resourcePath` directory, and if that is nil,
     /// then current "." directory will be used as the basis
     ///  - renderingDriver: the name of the Godot driver to use, defaults to `vulkan`
     ///  - renderingMethod: the Godot rendering method to use, defaults to `mobile`
     public init (
-        scene: String,
+        packFile: String,
         godotPackPath: String? = nil,
-        renderingDriver: String = "vulkan",
+        renderingDriver: String = "metal",
         renderingMethod: String = "mobile",
         extraArgs: [String] = []
     ) {
         let dir = godotPackPath ?? Bundle.main.resourcePath ?? "."
-        path = "\(dir)/\(scene)"
+        path = "\(dir)/\(packFile)"
         self.renderingDriver = renderingDriver
         self.renderingMethod = renderingMethod
         self.extraArgs = extraArgs
     }
     
     @discardableResult
-    func start() -> Bool {
+    public func start() -> Bool {
         if instance != nil {
             return true
         }
@@ -55,18 +58,42 @@ public class GodotSceneHost: ObservableObject {
             "--main-pack", path,
             "--rendering-driver", renderingDriver,
             "--rendering-method", renderingMethod,
-//            #if os(macOS)
-//            "--display-driver", "embedded"
-//            #else
             "--display-driver", "embedded"
         ]
         args.append(contentsOf: extraArgs)
-       
         
         instance = GodotInstance.create(args: args)
+        if instance != nil {
+            for view in pendingStart {
+                view.startGodotInstance()
+            }
+            pendingStart.removeAll()
+
+            for view in pendingLayout {
+                view.needsLayout = true
+            }
+            pendingLayout.removeAll()
+
+            for window in pendingWindow {
+                window.initGodotWindow()
+            }
+            pendingWindow.removeAll()
+        }
         return instance != nil
     }
-    
+
+    func queueStart(_ godotAppView: NSGodotAppView) {
+        pendingStart.insert(godotAppView)
+    }
+
+    func queueLayout(_ godotAppView: NSGodotAppView) {
+        pendingLayout.insert(godotAppView)
+    }
+
+    func queueGodotWindow(_ godotWindow: NSGodotWindow) {
+        pendingWindow.insert(godotWindow)
+    }
+
     #if os(iOS)
     func getTouchId(touch: UITouch) -> Int {
         var first = -1

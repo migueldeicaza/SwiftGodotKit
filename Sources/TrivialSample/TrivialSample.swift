@@ -52,8 +52,48 @@ struct ContentView: View {
         // scene.root?.addChild(node: rootNode)
     }
 
+    var extraViews: some View {
+        VStack {
+            GodotWindow { sub in
+                let ctr = VBoxContainer()
+                ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
+                sub.addChild(node: ctr)
 
-    @StateObject var host = GodotSceneHost(scene: "main.pck", godotPackPath: "/tmp")
+                let button1 = Button()
+                button1.text = "SubWindow 1"
+                let button2 = Button()
+                button2.text = "Another Button"
+                ctr.addChild(node: button1)
+                ctr.addChild(node: button2)
+            }
+            GodotWindow { sub in
+                let ctr = VBoxContainer()
+                ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
+                sub.addChild(node: ctr)
+
+                let button1 = Button()
+                button1.text = "SubWindow 2"
+                let button2 = Button()
+                button2.text = "Another Button 2"
+                ctr.addChild(node: button1)
+                ctr.addChild(node: button2)
+            }
+            GodotWindow { sub in
+                let ctr = VBoxContainer()
+                ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
+                sub.addChild(node: ctr)
+
+                let button1 = Button()
+                button1.text = "SubWindow 3"
+                let button2 = Button()
+                button2.text = "Another Button 3"
+                ctr.addChild(node: button1)
+                ctr.addChild(node: button2)
+            }
+        }
+    }
+    
+    @StateObject var app = GodotApp(packFile: "main.pck", godotPackPath: "/tmp")
     var body: some View {
         VStack {
             Image(systemName: "globe")
@@ -62,48 +102,16 @@ struct ContentView: View {
             Text("Hello, world!")
             HStack {
                 GodotAppView()
-                VStack {
-                    GodotWindow { sub in
-                        let ctr = VBoxContainer()
-                        ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
-                        sub.addChild(node: ctr)
-                        
-                        let button1 = Button()
-                        button1.text = "SubWindow 1"
-                        let button2 = Button()
-                        button2.text = "Another Button"
-                        ctr.addChild(node: button1)
-                        ctr.addChild(node: button2)
-                    }
-                    GodotWindow { sub in
-                        let ctr = VBoxContainer()
-                        ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
-                        sub.addChild(node: ctr)
-                        
-                        let button1 = Button()
-                        button1.text = "SubWindow 2"
-                        let button2 = Button()
-                        button2.text = "Another Button 2"
-                        ctr.addChild(node: button1)
-                        ctr.addChild(node: button2)
-                    }
-                    GodotWindow { sub in
-                        let ctr = VBoxContainer()
-                        ctr.setAnchorsPreset(Control.LayoutPreset.fullRect)
-                        sub.addChild(node: ctr)
-                        
-                        let button1 = Button()
-                        button1.text = "SubWindow 3"
-                        let button2 = Button()
-                        button2.text = "Another Button 3"
-                        ctr.addChild(node: button1)
-                        ctr.addChild(node: button2)
-                    }
-                }
+                extraViews
+
             }
         }
         .padding()
-        .environmentObject(host)
+        .environmentObject(app)
+        .onAppear {
+            app.start()
+            print ("GodotApp: Started")
+        }
     }
 }
 

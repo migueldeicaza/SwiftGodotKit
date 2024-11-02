@@ -7,7 +7,7 @@ import SwiftUI
 import SwiftGodot
 
 public struct GodotWindow: NSViewRepresentable {
-    @EnvironmentObject var sceneHost: GodotSceneHost
+    @EnvironmentObject var app: GodotApp
     let callback: ((SwiftGodot.Window)->())?
     var node: String?
     var view = NSGodotWindow()
@@ -17,10 +17,9 @@ public struct GodotWindow: NSViewRepresentable {
     }
     
     public func makeNSView(context: Context) -> NSGodotWindow {
-        sceneHost.start()
         view.callback = callback
         view.node = node
-        view.sceneHost = sceneHost
+        view.app = app
         return view
     }
         
@@ -36,7 +35,7 @@ public class NSGodotWindow: NSView {
     
     var callback: ((SwiftGodot.Window)->())?
     var node: String?
-    var sceneHost: GodotSceneHost?
+    var app: GodotApp?
     var inited = false
     
     override init(frame: CGRect) {
@@ -71,7 +70,7 @@ public class NSGodotWindow: NSView {
     
     func initGodotWindow() {
         if (!inited) {
-            if let instance = sceneHost?.instance {
+            if let instance = app?.instance {
                 if !instance.isStarted() {
                     return
                 }
@@ -98,6 +97,8 @@ public class NSGodotWindow: NSView {
                     }
                     inited = true
                 }
+            } else if let app {
+                app.queueGodotWindow (self)
             }
         }
     }
@@ -117,7 +118,7 @@ public class NSGodotWindow: NSView {
         windowLayer?.frame = self.bounds
         if inited {
             if embedded == nil {
-                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle)
+                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
             }
             resizeWindow ()
         }

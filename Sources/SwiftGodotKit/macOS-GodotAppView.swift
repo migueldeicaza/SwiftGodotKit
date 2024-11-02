@@ -7,15 +7,14 @@ import SwiftUI
 import SwiftGodot
 #if os(macOS)
 public struct GodotAppView: NSViewRepresentable {
-    @EnvironmentObject var sceneHost: GodotSceneHost
+    @EnvironmentObject var app: GodotApp
     var view = NSGodotAppView(frame: CGRect.zero)
     
     public init () {
         
     }
     public func makeNSView(context: Context) -> NSGodotAppView {
-        sceneHost.start()
-        view.sceneHost = sceneHost
+        view.app = app
         return view
     }
 
@@ -29,7 +28,7 @@ public class NSGodotAppView: NSView {
     private var link : CADisplayLink? = nil
     private var embedded: DisplayServerEmbedded?
     
-    public var sceneHost: GodotSceneHost?
+    public var app: GodotApp?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -61,10 +60,10 @@ public class NSGodotAppView: NSView {
 
     func resizeWindow() {
         guard let embedded else { return }
-        guard DisplayServer.mainWindowId != 0 else {
-            print ("Can not resize yet")
-            return
-        }
+//        guard DisplayServer.mainWindowId != 0 else {
+//            print ("Can not resize yet")
+//            return
+//        }
         
         embedded.resizeWindow(
             size: Vector2i(x: Int32(self.bounds.size.width), y: Int32(self.bounds.size.height)),
@@ -76,20 +75,22 @@ public class NSGodotAppView: NSView {
         if let renderingLayer {
             renderingLayer.frame = self.bounds
         }
-        if let instance = sceneHost?.instance {
+        if let instance = app?.instance {
             if instance.isStarted() {
                 if embedded == nil {
-                    embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle)
+                    embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
                 }
                 
                 resizeWindow()
             }
+        } else if let app {
+            app.queueLayout(self)
         }
         super.layout()
     }
-    
+
     func startGodotInstance() {
-        if let instance = sceneHost?.instance {
+        if let instance = app?.instance {
             if !instance.isStarted() {
                 let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer!).toOpaque()))
                 DisplayServerEmbedded.setNativeSurface(rendererNativeSurface)
@@ -98,6 +99,8 @@ public class NSGodotAppView: NSView {
                 link.add(to: .current, forMode: RunLoop.Mode.default)
                 self.link = link
             }
+        } else if let app {
+            app.queueStart(self)
         }
     }
     
@@ -105,7 +108,7 @@ public class NSGodotAppView: NSView {
         link?.invalidate()
         link = nil
         
-        if let instance = sceneHost?.instance {
+        if let instance = app?.instance {
             GodotInstance.destroy(instance: instance)
         }
     }
@@ -117,7 +120,7 @@ public class NSGodotAppView: NSView {
     
     @objc
     func iterate() {
-        if let instance = sceneHost?.instance {
+        if let instance = app?.instance {
             if instance.isStarted() {
                 _ = instance.iteration()
             }

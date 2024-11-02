@@ -31,7 +31,7 @@ let package = Package(
             dependencies: [
                 "SwiftGodot",
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
+//                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
                 .target(name: "MoltenVK", condition: .when(platforms: [.iOS])),
                 .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ]
