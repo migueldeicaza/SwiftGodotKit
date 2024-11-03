@@ -44,6 +44,7 @@ public class GodotApp: ObservableObject {
         self.renderingDriver = renderingDriver
         self.renderingMethod = renderingMethod
         self.extraArgs = extraArgs
+
     }
     
     @discardableResult
