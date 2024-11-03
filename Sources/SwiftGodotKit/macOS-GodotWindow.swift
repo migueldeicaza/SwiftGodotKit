@@ -49,6 +49,7 @@ public class NSGodotWindow: NSView {
     }
     
     private func commonInit() {
+        wantsLayer = true
         let windowLayer = CAMetalLayer()
         windowLayer.frame = bounds
         windowLayer.contentsScale = 1
