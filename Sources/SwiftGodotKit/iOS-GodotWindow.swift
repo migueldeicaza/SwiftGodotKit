@@ -8,7 +8,7 @@ import SwiftUI
 import SwiftGodot
 
 public struct GodotWindow: UIViewRepresentable {
-    @EnvironmentObject var sceneHost: GodotSceneHost
+    @EnvironmentObject var app: GodotApp
     @State var callback: ((SwiftGodot.Window)->())?
     @State var node: String?
     var view = UIGodotWindow()
@@ -18,12 +18,12 @@ public struct GodotWindow: UIViewRepresentable {
     }
     
     public func makeUIView(context: Context) -> UIGodotWindow {
-        sceneHost.start()
+        app.start()
         view.contentScaleFactor = UIScreen.main.scale
         view.isMultipleTouchEnabled = true
         view.callback = callback
         view.node = node
-        view.sceneHost = sceneHost
+        view.app = app
         return view
     }
         
@@ -39,7 +39,7 @@ public class UIGodotWindow: UIView {
     
     var callback: ((SwiftGodot.Window)->())?
     var node: String?
-    var sceneHost: GodotSceneHost?
+    var app: GodotApp?
     var inited = false
     
     override init(frame: CGRect) {
@@ -73,7 +73,7 @@ public class UIGodotWindow: UIView {
     
     func initGodotWindow() {
         if (!inited) {
-            if let instance = sceneHost?.instance {
+            if let instance = app?.instance {
                 if !instance.isStarted() {
                     return
                 }
@@ -89,16 +89,18 @@ public class UIGodotWindow: UIView {
                 subwindow?.setNativeSurface(windowNativeSurface)
                 (Engine.getMainLoop() as! SceneTree).root!.addChild(node: subwindow)
                 inited = true
+            } else if let app {
+                app.queueGodotWindow(self)
             }
         }
     }
     
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let windowLayer, let sceneHost, sceneHost.instance != nil else { return }
+        guard let windowLayer, let app, app.instance != nil else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
-            let touchId = sceneHost.getTouchId(touch: touch)
+            let touchId = app.getTouchId(touch: touch)
             if touchId == -1 {
                 continue
             }
@@ -123,11 +125,11 @@ public class UIGodotWindow: UIView {
     }
     
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let windowLayer, let sceneHost, sceneHost.instance != nil else { return }
+        guard let windowLayer, let app, app.instance != nil else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
-            let touchId = sceneHost.getTouchId(touch: touch)
+            let touchId = app.getTouchId(touch: touch)
             if touchId == -1 {
                 continue
             }
@@ -166,15 +168,15 @@ public class UIGodotWindow: UIView {
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let windowLayer, let sceneHost, sceneHost.instance != nil else { return }
+        guard let windowLayer, let app, app.instance != nil else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
-            let touchId = sceneHost.getTouchId(touch: touch)
+            let touchId = app.getTouchId(touch: touch)
             if touchId == -1 {
                 continue
             }
-            sceneHost.removeTouchId(id: touchId)
+            app.removeTouchId(id: touchId)
             var location = touch.location(in: self)
             if !self.layer.frame.contains(location) {
                 continue
@@ -195,15 +197,15 @@ public class UIGodotWindow: UIView {
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let sceneHost, sceneHost.instance != nil else { return }
-        
+        guard let app, app.instance != nil else { return }
+
         var touchData: [[String : Any]] = []
         for touch in touches {
-            let touchId = sceneHost.getTouchId(touch: touch)
+            let touchId = app.getTouchId(touch: touch)
             if touchId == -1 {
                 continue
             }
-            sceneHost.removeTouchId(id: touchId)
+            app.removeTouchId(id: touchId)
             touchData.append([ "touchId": touchId ])
         }
         
@@ -226,7 +228,7 @@ public class UIGodotWindow: UIView {
         self.windowLayer?.frame = self.bounds
         if inited {
             if embedded == nil {
-                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle)
+                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
             }
             resizeWindow()
         }

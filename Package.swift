@@ -31,7 +31,7 @@ let package = Package(
             dependencies: [
                 "SwiftGodot",
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-//                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
+                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
                 .target(name: "MoltenVK", condition: .when(platforms: [.iOS])),
                 .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ]
@@ -71,8 +71,8 @@ let package = Package(
         .binaryTarget(name: "mac_libgodot",
                       path: "scripts/libgodot.xcframework"),
         .binaryTarget(name: "ios_libgodot",
-                      path: "scripts/libgodot_ios.xcframework"),
-        
+                      path: "scripts/ios/libgodot.xcframework"),
+
 //        .binaryTarget (
 //            name: "binary_libgodot",
 //            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/p4_3-1.0.1/libgodot.xcframework.zip",

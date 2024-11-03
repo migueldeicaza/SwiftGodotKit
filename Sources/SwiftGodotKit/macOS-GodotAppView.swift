@@ -23,6 +23,9 @@ public struct GodotAppView: NSViewRepresentable {
     }
 }
 
+typealias TTGodotAppView = NSGodotAppView
+typealias TTGodotWindow = NSGodotWindow
+
 public class NSGodotAppView: NSView {
     public var renderingLayer: CAMetalLayer? = nil
     private var link : CADisplayLink? = nil

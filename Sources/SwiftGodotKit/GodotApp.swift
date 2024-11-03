@@ -13,9 +13,9 @@ public class GodotApp: ObservableObject {
     let renderingMethod: String
     let extraArgs: [String]
     let maxTouchCount = 32
-    var pendingStart = Set<NSGodotAppView>()
-    var pendingLayout = Set<NSGodotAppView>()
-    var pendingWindow = Set<NSGodotWindow>()
+    var pendingStart = Set<TTGodotAppView>()
+    var pendingLayout = Set<TTGodotAppView>()
+    var pendingWindow = Set<TTGodotWindow>()
 
     #if os(iOS)
     var touches: [UITouch?] = []
@@ -71,7 +71,11 @@ public class GodotApp: ObservableObject {
             pendingStart.removeAll()
 
             for view in pendingLayout {
+                #if os(macOS)
                 view.needsLayout = true
+                #else
+                view.setNeedsLayout()
+                #endif
             }
             pendingLayout.removeAll()
 
@@ -83,15 +87,15 @@ public class GodotApp: ObservableObject {
         return instance != nil
     }
 
-    func queueStart(_ godotAppView: NSGodotAppView) {
+    func queueStart(_ godotAppView: TTGodotAppView) {
         pendingStart.insert(godotAppView)
     }
 
-    func queueLayout(_ godotAppView: NSGodotAppView) {
+    func queueLayout(_ godotAppView: TTGodotAppView) {
         pendingLayout.insert(godotAppView)
     }
 
-    func queueGodotWindow(_ godotWindow: NSGodotWindow) {
+    func queueGodotWindow(_ godotWindow: TTGodotWindow) {
         pendingWindow.insert(godotWindow)
     }
 

@@ -6,9 +6,10 @@
 //  Created by Miguel de Icaza on 4/1/23.
 //
 import SwiftUI
-import AppKit
 import SwiftGodot
 
+#if os(macOS)
+import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidResignActive(_ notification: Notification) {
         Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusOut))
@@ -22,10 +23,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print ("Lauching")
     }
 }
+#endif
 
 @main
 struct testAppkitUIApp: App {
+    #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    #endif
 
     var body: some Scene {
         WindowGroup {
