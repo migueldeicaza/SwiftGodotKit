@@ -53,9 +53,9 @@ func loadScene (scene: SceneTree) {
     let properties = ClassDB.classGetPropertyList (class: StringName ("Node2D"))
     print ("Elements: \(properties.count)")
     let a = GArray()
-    a.append(value: Variant ("Hello"))
-    a.append(value: Variant ("Word"))
-    a.append(value: Variant ("Foo"))
+    a.append(Variant ("Hello"))
+    a.append(Variant ("Word"))
+    a.append(Variant ("Foo"))
     for x in a {
         print ("value is \(x)")
     }

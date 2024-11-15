@@ -144,18 +144,18 @@ class SpinningCube: Node3D {
         print ("SpinningCube: event: isPressed ")
     }
     
-    func readyCallback (args: [Variant]) -> Variant? {
+    func readyCallback (args: borrowing Arguments) -> Variant? {
         print ("SpinningCube: readyCallback method called")
         return nil
         
     }
     
-    func MyCallback (args: [Variant]) -> Variant? {
+    func MyCallback (args: borrowing Arguments) -> Variant? {
         print ("SpinningCube: MySignal triggered")
         return nil
     }
 
-    func MyPrinter (args: [Variant]) -> Variant? {
+    func MyPrinter (args: borrowing Arguments) -> Variant? {
         guard args.count > 0 else {
             print ("SpinningCube: Not enough parameters to MyPrinter: \(args.count)")
             return nil
