@@ -1,3 +1,12 @@
+<div align="center">
+<h1>SwiftGodotKit</h1>
+    <br>
+<img src="https://github.com/user-attachments/assets/23029ad3-e05d-404c-97f7-397c7f2172b2" width="200">
+</div>
+<br>
+
+# About
+
 SwiftGodotKit provides a way of embedding Godot into an existing Swift
 application and driving Godot from Swift, without having to use an
 extension.   This is a companion to [SwiftGodot](https://github.com/migueldeicaza/SwiftGodot) which
