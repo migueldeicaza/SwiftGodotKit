@@ -7,7 +7,7 @@ import SwiftUI
 import SwiftGodot
 
 public struct GodotWindow: NSViewRepresentable {
-    @EnvironmentObject var app: GodotApp
+    @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     let callback: ((SwiftGodot.Window)->())?
     var node: String?
     var view = NSGodotWindow()

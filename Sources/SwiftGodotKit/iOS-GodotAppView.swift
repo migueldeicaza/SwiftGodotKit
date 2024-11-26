@@ -8,15 +8,13 @@ import SwiftGodot
 
 #if os(iOS)
 public struct GodotAppView: UIViewRepresentable {
+    @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     var view = UIGodotAppView(frame: CGRect.zero)
-    let app: GodotApp
     
-    public init(app: GodotApp) {
-        self.app = app
-    }
+    public init() { }
 
     public func makeUIView(context: Context) -> UIGodotAppView {
-        app.start()
+        app?.start()
         view.contentScaleFactor = UIScreen.main.scale
         view.isMultipleTouchEnabled = true
         view.app = app

@@ -125,3 +125,7 @@ public class GodotApp: ObservableObject {
     }
     #endif
 }
+
+public extension EnvironmentValues {
+    @Entry var godotApp: GodotApp? = nil
+}
