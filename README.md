@@ -3,75 +3,46 @@ application and driving Godot from Swift, without having to use an
 extension.   This is a companion to [SwiftGodot](https://github.com/migueldeicaza/SwiftGodot) which
 provides the API binding to the Godot API.
 
-Take a look at the `TrivialSample` here to see how it works.
+# New SwiftGodotKit
 
-You will need Swift 5.9 for this (Xcode 15 release candidate will do).
+This branch contains the new embeddable system that is better suited
+to be embedded into an existing iOS app (Mac support is not ready),
+and allows either a full game to be displayed, or indidivual parts in
+an app.
 
-Reference this Package.swift and then you can write a simple program
-like this:
+## Using this
 
-```swift
-import Foundation
+This is a work-in-progress and requires some assembly until I have
+time to package this properly.
+
+This branch requires a peer "SwiftGodot" for branch "libgodot-4.3" and
+it also requires the scripts/ios/libgodot.xcframework that is built from
+github.com/migeran/libgodot_project branch libgodot_migeran_next_44 using `build_libgodot.sh`
+
+## Sample
+
+A simple SwiftUI API is provided.
+
+In the example below, in an existing iOS project type using SwiftUI,
+add a Godot PCK file to your project, and then call it like this:
+
+```
+import SwiftUI
 import SwiftGodot
 import SwiftGodotKit
 
-func loadScene (scene: SceneTree) {
-    let rootNode = Node3D()
-    let camera = Camera3D ()
-    camera.current = true
-    camera.position = Vector3(x: 0, y: 0, z: 2)
-    
-    rootNode.addChild(node: camera)
-    
-    func makeCuteNode (_ pos: Vector3) -> Node {
-        let n = SpinningCube()
-        n.position = pos
-        return n
-    }
-    rootNode.addChild(node: makeCuteNode(Vector3(x: 1, y: 1, z: 1)))
-    rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
-    rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
-    scene.root?.addChild(node: rootNode)
-}
+struct ContentView: View {
+    @State var app = GodotApp(packFile: "game.pck")
 
-
-class SpinningCube: Node3D {
-    required init (nativeHandle: UnsafeRawPointer) {
-        super.init (nativeHandle: nativeHandle)
-    }
-    
-    required init () {
-        super.init ()
-        let meshRender = MeshInstance3D()
-        meshRender.mesh = BoxMesh()
-        addChild(node: meshRender)
-    }
-    
-    override func _input (event: InputEvent) {
-        guard event.isPressed () && !event.isEcho () else { return }
-        print ("SpinningCube: event: isPressed ")
-    }
-    
-    public override func _process(delta: Double) {
-        rotateY(angle: delta)
+    var body: some View {
+        VStack {
+            Text("Game is below:")
+            GodotAppView(app: app)
+                .padding()
+        }
     }
 }
-
-func registerTypes (level: GDExtension.InitializationLevel) {
-    switch level {
-    case .scene:
-        register (type: SpinningCube.self)
-    default:
-        break
-    }
-}
-
-runGodot(args: [], initHook: registerTypes, loadScene: loadScene, loadProjectSettings: { settings in })
 ```
-
-A standalone sample that you can use as a starting point is available here, when used as SwiftPM:
-
-https://github.com/migueldeicaza/SwiftGodotKit/tree/main/StandaloneExample
 
 
 # Sausage Making Details 
