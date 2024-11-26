@@ -7,11 +7,11 @@ import SwiftUI
 import SwiftGodot
 #if os(macOS)
 public struct GodotAppView: NSViewRepresentable {
-    @EnvironmentObject var app: GodotApp
     var view = NSGodotAppView(frame: CGRect.zero)
-    
-    public init () {
-        
+    let app: GodotApp
+
+    public init (app: GodotApp) {
+        self.app = app
     }
     public func makeNSView(context: Context) -> NSGodotAppView {
         view.app = app

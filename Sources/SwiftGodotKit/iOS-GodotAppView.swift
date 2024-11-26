@@ -8,11 +8,13 @@ import SwiftGodot
 
 #if os(iOS)
 public struct GodotAppView: UIViewRepresentable {
-    @EnvironmentObject var app: GodotApp
     var view = UIGodotAppView(frame: CGRect.zero)
+    let app: GodotApp
     
-    public init() {}
-    
+    public init(app: GodotApp) {
+        self.app = app
+    }
+
     public func makeUIView(context: Context) -> UIGodotAppView {
         app.start()
         view.contentScaleFactor = UIScreen.main.scale
