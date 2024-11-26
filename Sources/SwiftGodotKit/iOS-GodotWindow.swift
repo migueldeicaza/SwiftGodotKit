@@ -72,9 +72,12 @@ public class UIGodotWindow: UIView {
     }
     
     func initGodotWindow() {
+        guard let app else { return }
+        
         if (!inited) {
-            if let instance = app?.instance {
+            if let instance = app.instance {
                 if !instance.isStarted() {
+                    app.queueGodotWindow(self)
                     return
                 }
                 if let node {
@@ -89,7 +92,7 @@ public class UIGodotWindow: UIView {
                 subwindow?.setNativeSurface(windowNativeSurface)
                 (Engine.getMainLoop() as! SceneTree).root!.addChild(node: subwindow)
                 inited = true
-            } else if let app {
+            } else {
                 app.queueGodotWindow(self)
             }
         }

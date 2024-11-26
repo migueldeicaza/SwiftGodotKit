@@ -93,7 +93,10 @@ public class UIGodotAppView: UIView {
     }
     
     func startGodotInstance() {
-        if let instance = app?.instance {
+        guard let app else {
+            return
+        }
+        if let instance = app.instance {
             if !instance.isStarted() {
                 let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer!).toOpaque()))
                 DisplayServerEmbedded.setNativeSurface(rendererNativeSurface)
@@ -101,8 +104,10 @@ public class UIGodotAppView: UIView {
                 let displayLink = CADisplayLink(target: self, selector: #selector(iterate))
                 displayLink.add(to: .current, forMode: RunLoop.Mode.default)
                 self.displayLink = displayLink
+
+                app.startPending()
             }
-        } else if let app {
+        } else {
             app.queueStart(self)
         }
     }

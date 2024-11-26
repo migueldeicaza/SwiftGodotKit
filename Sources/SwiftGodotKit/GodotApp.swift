@@ -46,7 +46,30 @@ public class GodotApp: ObservableObject {
         self.extraArgs = extraArgs
 
     }
-    
+
+    public func startPending() {
+        guard let instance else { return }
+
+        for view in pendingStart {
+            view.startGodotInstance()
+        }
+        pendingStart.removeAll()
+
+        for view in pendingLayout {
+#if os(macOS)
+            view.needsLayout = true
+#else
+            view.setNeedsLayout()
+#endif
+        }
+        pendingLayout.removeAll()
+
+        for window in pendingWindow {
+            window.initGodotWindow()
+        }
+        pendingWindow.removeAll()   
+    }
+
     @discardableResult
     public func start() -> Bool {
         if instance != nil {
@@ -64,26 +87,8 @@ public class GodotApp: ObservableObject {
         args.append(contentsOf: extraArgs)
         
         instance = GodotInstance.create(args: args)
-        if instance != nil {
-            for view in pendingStart {
-                view.startGodotInstance()
-            }
-            pendingStart.removeAll()
-
-            for view in pendingLayout {
-                #if os(macOS)
-                view.needsLayout = true
-                #else
-                view.setNeedsLayout()
-                #endif
-            }
-            pendingLayout.removeAll()
-
-            for window in pendingWindow {
-                window.initGodotWindow()
-            }
-            pendingWindow.removeAll()
-        }
+        startPending()
+        
         return instance != nil
     }
 
