@@ -3,6 +3,7 @@
 //
 //
 
+import OSLog
 import SwiftUI
 import SwiftGodot
 
@@ -14,7 +15,12 @@ public struct GodotAppView: UIViewRepresentable {
     public init() { }
 
     public func makeUIView(context: Context) -> UIGodotAppView {
-        app?.start()
+        guard let app else {
+            Logger.App.error("No GodotApp instance")
+            return view
+        }
+        
+        app.start()
         view.contentScaleFactor = UIScreen.main.scale
         view.isMultipleTouchEnabled = true
         view.app = app

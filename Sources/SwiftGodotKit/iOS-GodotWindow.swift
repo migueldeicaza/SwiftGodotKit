@@ -4,6 +4,7 @@
 //
 #if os(iOS)
 
+import OSLog
 import SwiftUI
 import SwiftGodot
 
@@ -17,7 +18,12 @@ public struct GodotWindow: UIViewRepresentable {
     }
     
     public func makeUIView(context: Context) -> UIGodotWindow {
-        app?.start()
+        guard let app else {
+            Logger.Window.error("No GodotApp instance")
+            return view
+        }
+        
+        app.start()
         view.contentScaleFactor = UIScreen.main.scale
         view.isMultipleTouchEnabled = true
         
