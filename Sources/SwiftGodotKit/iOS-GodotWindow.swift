@@ -8,20 +8,19 @@ import SwiftUI
 import SwiftGodot
 
 public struct GodotWindow: UIViewRepresentable {
-    @State var callback: ((SwiftGodot.Window)->())?
     @State var node: String?
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     var view = UIGodotWindow()
 
     public init (callback: ((SwiftGodot.Window)->())?) {
-        self.callback = callback
+        view.callback = callback
     }
     
     public func makeUIView(context: Context) -> UIGodotWindow {
         app?.start()
         view.contentScaleFactor = UIScreen.main.scale
         view.isMultipleTouchEnabled = true
-        view.callback = callback
+        
         view.node = node
         view.app = app
         return view
