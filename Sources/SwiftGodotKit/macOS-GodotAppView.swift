@@ -123,7 +123,13 @@ public class NSGodotAppView: NSView {
     
     public override func viewDidMoveToSuperview() {
         commonInit()
-        startGodotInstance()
+    }
+    
+    public override func viewDidMoveToWindow() {
+        // It seems doing this in viewDidMoveToSuperview is too early to start the Godot app.
+        if window != nil {
+            app?.start()
+        }
     }
     
     @objc
