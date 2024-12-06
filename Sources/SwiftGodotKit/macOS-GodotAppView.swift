@@ -106,6 +106,10 @@ public class NSGodotAppView: NSView {
                 let link = displayLink(target: self, selector: #selector(iterate))
                 link.add(to: .current, forMode: RunLoop.Mode.default)
                 self.link = link
+                
+                if let delegate = app?.appDelegate {
+                    NSApplication.shared.delegate = delegate
+                }
             }
         } else if let app {
             app.queueStart(self)

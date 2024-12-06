@@ -16,6 +16,8 @@ public class GodotApp: ObservableObject {
     var pendingStart = Set<TTGodotAppView>()
     var pendingLayout = Set<TTGodotAppView>()
     var pendingWindow = Set<TTGodotWindow>()
+    
+    internal let appDelegate: GodotAppDelegate
 
     #if os(iOS)
     var touches: [UITouch?] = []
@@ -37,14 +39,15 @@ public class GodotApp: ObservableObject {
         godotPackPath: String? = nil,
         renderingDriver: String = "metal",
         renderingMethod: String = "mobile",
-        extraArgs: [String] = []
+        extraArgs: [String] = [],
+        appDelegate: GodotAppDelegate? = nil
     ) {
         let dir = godotPackPath ?? Bundle.main.resourcePath ?? "."
         path = "\(dir)/\(packFile)"
         self.renderingDriver = renderingDriver
         self.renderingMethod = renderingMethod
         self.extraArgs = extraArgs
-
+        self.appDelegate = appDelegate ?? GodotAppDelegate()
     }
 
     public func startPending() {
@@ -75,6 +78,7 @@ public class GodotApp: ObservableObject {
         if instance != nil {
             return true
         }
+        
         #if os(iOS)
         touches = [UITouch?](repeating: nil, count: maxTouchCount)
         #endif
