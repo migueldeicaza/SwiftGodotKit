@@ -3,6 +3,7 @@
 //
 //
 
+import OSLog
 import SwiftUI
 import SwiftGodot
 #if os(macOS)
@@ -13,6 +14,11 @@ public struct GodotAppView: NSViewRepresentable {
     public init () { }
     
     public func makeNSView(context: Context) -> NSGodotAppView {
+        guard let app else {
+            Logger.App.error("No GodotApp instance")
+            return view
+        }
+        
         view.app = app
         return view
     }
@@ -117,7 +123,13 @@ public class NSGodotAppView: NSView {
     
     public override func viewDidMoveToSuperview() {
         commonInit()
-        startGodotInstance()
+    }
+    
+    public override func viewDidMoveToWindow() {
+        // It seems doing this in viewDidMoveToSuperview is too early to start the Godot app.
+        if window != nil {
+            app?.start()
+        }
     }
     
     @objc

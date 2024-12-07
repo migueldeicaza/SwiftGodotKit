@@ -16,6 +16,10 @@ public class GodotApp: ObservableObject {
     var pendingStart = Set<TTGodotAppView>()
     var pendingLayout = Set<TTGodotAppView>()
     var pendingWindow = Set<TTGodotWindow>()
+    
+    #if os(macOS)
+    internal let appDelegate: GodotAppDelegate
+    #endif
 
     #if os(iOS)
     var touches: [UITouch?] = []
@@ -44,7 +48,10 @@ public class GodotApp: ObservableObject {
         self.renderingDriver = renderingDriver
         self.renderingMethod = renderingMethod
         self.extraArgs = extraArgs
-
+        
+        #if os(macOS)
+        self.appDelegate = GodotAppDelegate()
+        #endif
     }
 
     public func startPending() {
@@ -75,6 +82,7 @@ public class GodotApp: ObservableObject {
         if instance != nil {
             return true
         }
+        
         #if os(iOS)
         touches = [UITouch?](repeating: nil, count: maxTouchCount)
         #endif
@@ -87,6 +95,11 @@ public class GodotApp: ObservableObject {
         args.append(contentsOf: extraArgs)
         
         instance = GodotInstance.create(args: args)
+        
+#if os(macOS)
+        NSApplication.shared.delegate = appDelegate
+#endif
+
         startPending()
         
         return instance != nil
