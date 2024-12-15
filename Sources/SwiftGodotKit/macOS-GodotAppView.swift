@@ -168,10 +168,10 @@ public class NSGodotAppView: NSView {
 
         mb.pressed = pressed
         let local = event.locationInWindow
+        let locationInView = convert(local, from: nil)
 
-        let scale = window?.backingScaleFactor ?? 1.0
-
-        let vpos = Vector2(x: Float(local.x/scale), y: Float(local.y/scale))
+        let vpos = Vector2(x: Float(locationInView.x),
+                           y: Float(bounds.height - locationInView.y))
         mb.globalPosition = vpos
         mb.position = vpos
 
