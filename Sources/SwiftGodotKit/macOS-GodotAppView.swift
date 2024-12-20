@@ -32,6 +32,9 @@ typealias TTGodotAppView = NSGodotAppView
 typealias TTGodotWindow = NSGodotWindow
 
 public class NSGodotAppView: NSView {
+    static var keymap: [UInt16: Key] = initKeyMap()
+    static var locationMap: [UInt16: KeyLocation] = initLocationMap()
+    
     public var renderingLayer: CAMetalLayer? = nil
     private var link : CADisplayLink? = nil
     private var embedded: DisplayServerEmbedded?
@@ -132,6 +135,10 @@ public class NSGodotAppView: NSView {
         }
     }
     
+    public override var acceptsFirstResponder: Bool {
+        true
+    }
+    
     @objc
     func iterate() {
         if let instance = app?.instance {
@@ -141,6 +148,37 @@ public class NSGodotAppView: NSView {
         }
     }
 
+    override public func keyDown(with event: NSEvent) {
+        processKeyEvent(event: event, pressed: true)
+    }
+    
+    override public func keyUp(with event: NSEvent) {
+        processKeyEvent(event: event, pressed: false)
+    }
+    
+    func processKeyEvent(event: NSEvent, pressed: Bool) {
+        let windowId = Int32(DisplayServer.mainWindowId)
+        let keyEvent = InputEventKey()
+        keyEvent.windowId = Int(windowId)
+        
+        guard let key = NSGodotAppView.keymap[event.keyCode] else {
+            return
+        }
+        
+        keyEvent.physicalKeycode = key
+
+        keyEvent.ctrlPressed = event.modifierFlags.contains(.control)
+        keyEvent.shiftPressed = event.modifierFlags.contains(.shift)
+        keyEvent.altPressed = event.modifierFlags.contains(.option)
+        keyEvent.metaPressed = event.modifierFlags.contains(.command)
+        
+        keyEvent.echo = event.isARepeat
+        keyEvent.pressed = pressed
+        keyEvent.location = NSGodotAppView.locationMap[event.keyCode] ?? .unspecified
+
+        Input.parseInputEvent(keyEvent)
+    }
+    
     var mouseDownControl: Bool = false
     override public func mouseDown(with event: NSEvent) {
         if event.modifierFlags.contains(.control) {
@@ -188,6 +226,155 @@ public class NSGodotAppView: NSView {
             mb.doubleClick = event.clickCount == 2
         }
         Input.parseInputEvent(mb)
+    }
+}
+
+private extension NSGodotAppView {
+    static func initKeyMap() -> [UInt16: Key] {
+        var keymap: [UInt16: Key] = [:]
+        keymap[0x00] = Key.a
+        keymap[0x01] = Key.s
+        keymap[0x02] = Key.d
+        keymap[0x03] = Key.f
+        keymap[0x04] = Key.h
+        keymap[0x05] = Key.g
+        keymap[0x06] = Key.z
+        keymap[0x07] = Key.x
+        keymap[0x08] = Key.c
+        keymap[0x09] = Key.v
+        keymap[0x0a] = Key.section
+        keymap[0x0b] = Key.b
+        keymap[0x0c] = Key.q
+        keymap[0x0d] = Key.w
+        keymap[0x0e] = Key.e
+        keymap[0x0f] = Key.r
+        keymap[0x10] = Key.y
+        keymap[0x11] = Key.t
+        keymap[0x12] = Key.key1
+        keymap[0x13] = Key.key2
+        keymap[0x14] = Key.key3
+        keymap[0x15] = Key.key4
+        keymap[0x16] = Key.key6
+        keymap[0x17] = Key.key5
+        keymap[0x18] = Key.equal
+        keymap[0x19] = Key.key9
+        keymap[0x1a] = Key.key7
+        keymap[0x1b] = Key.minus
+        keymap[0x1c] = Key.key8
+        keymap[0x1d] = Key.key0
+        keymap[0x1e] = Key.bracketright
+        keymap[0x1f] = Key.o
+        keymap[0x20] = Key.u
+        keymap[0x21] = Key.bracketleft
+        keymap[0x22] = Key.i
+        keymap[0x23] = Key.p
+        keymap[0x24] = Key.enter
+        keymap[0x25] = Key.l
+        keymap[0x26] = Key.j
+        keymap[0x27] = Key.apostrophe
+        keymap[0x28] = Key.k
+        keymap[0x29] = Key.semicolon
+        keymap[0x2a] = Key.backslash
+        keymap[0x2b] = Key.comma
+        keymap[0x2c] = Key.slash
+        keymap[0x2d] = Key.n
+        keymap[0x2e] = Key.m
+        keymap[0x2f] = Key.period
+        keymap[0x30] = Key.tab
+        keymap[0x31] = Key.space
+        keymap[0x32] = Key.quoteleft
+        keymap[0x33] = .backspace
+        keymap[0x35] = .escape
+        keymap[0x36] = .meta
+        keymap[0x37] = .meta
+        keymap[0x38] = .shift
+        keymap[0x39] = .capslock
+        keymap[0x3a] = .alt
+        keymap[0x3b] = .ctrl
+        keymap[0x3c] = .shift
+        keymap[0x3d] = .alt
+        keymap[0x3e] = .ctrl
+        keymap[0x40] = .f17
+        keymap[0x41] = .kpPeriod
+        keymap[0x43] = .kpMultiply
+        keymap[0x45] = .kpAdd
+        keymap[0x47] = .numlock
+        keymap[0x48] = .volumeup
+        keymap[0x49] = .volumedown
+        keymap[0x4a] = .volumemute
+        keymap[0x4b] = .kpDivide
+        keymap[0x4c] = .kpEnter
+        keymap[0x4e] = .kpSubtract
+        keymap[0x4f] = .f18
+        keymap[0x50] = .f19
+        keymap[0x51] = .equal
+        keymap[0x52] = .kp0
+        keymap[0x53] = .kp1
+        keymap[0x54] = .kp2
+        keymap[0x55] = .kp3
+        keymap[0x56] = .kp4
+        keymap[0x57] = .kp5
+        keymap[0x58] = .kp6
+        keymap[0x59] = .kp7
+        keymap[0x5a] = .f20
+        keymap[0x5b] = .kp8
+        keymap[0x5c] = .kp9
+        keymap[0x5d] = .yen
+        keymap[0x5e] = .underscore
+        keymap[0x5f] = .comma
+        keymap[0x60] = .f5
+        keymap[0x61] = .f6
+        keymap[0x62] = .f7
+        keymap[0x63] = .f3
+        keymap[0x64] = .f8
+        keymap[0x65] = .f9
+        keymap[0x66] = .jisEisu
+        keymap[0x67] = .f11
+        keymap[0x68] = .jisKana
+        keymap[0x69] = .f13
+        keymap[0x6a] = .f16
+        keymap[0x6b] = .f14
+        keymap[0x6d] = .f10
+        keymap[0x6e] = .menu
+        keymap[0x6f] = .f12
+        keymap[0x71] = .f15
+        keymap[0x72] = .insert
+        keymap[0x73] = .home
+        keymap[0x74] = .pageup
+        keymap[0x75] = .delete
+        keymap[0x76] = .f4
+        keymap[0x77] = .end
+        keymap[0x78] = .f2
+        keymap[0x79] = .pagedown
+        keymap[0x7a] = .f1
+        keymap[0x7b] = .left
+        keymap[0x7c] = .right
+        keymap[0x7d] = .down
+        keymap[0x7e] = .up
+        
+        return keymap
+    }
+    
+    static func initLocationMap() -> [UInt16: KeyLocation] {
+        var map = [UInt16: KeyLocation]()
+        
+        // ctrl
+        map[0x3b] = .left
+        map[0x3e] = .right
+        
+        // shift
+        map[0x38] = .left
+        map[0x3c] = .right
+        
+        // Alt/Option
+        map[0x3a] = .left
+        map[0x3d] = .right
+        
+        // Command
+        map[0x36] = .right
+        map[0x37] = .left
+        
+        return map
     }
 }
 #endif
