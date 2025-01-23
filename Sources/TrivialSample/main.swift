@@ -35,18 +35,7 @@ import SwiftGodotKit
 //}
 
 func propInfo (from: GDictionary) -> PropInfo? {
-    guard let name = from ["name"]?.description else { return nil }
-    guard let type = Int (from ["type"] ?? Variant (Nil())) else { return nil }
-    guard let className = from ["class_name"]?.description else { return nil }
-    guard let hint = Int (from ["hint"] ?? Variant (Nil())) else { return nil }
-    guard let hint_string = from ["hint_string"]?.description else { return nil }
-    guard let usage = Int (from ["usage"] ?? Variant (Nil())) else { return nil }
-    return PropInfo(propertyType: Variant.GType(rawValue: Int64(type))!,
-                    propertyName: StringName(stringLiteral: name),
-                    className: StringName (stringLiteral: className),
-                    hint: PropertyHint (rawValue: Int64(hint))!,
-                    hintStr: GString (stringLiteral: hint_string),
-                    usage: PropertyUsageFlags(rawValue: Int(usage)))
+    return nil
 }
 
 func loadScene (scene: SceneTree) {
@@ -59,36 +48,7 @@ func loadScene (scene: SceneTree) {
     for x in a {
         print ("value is \(x)")
     }
-        
-    for dict in properties {
-        guard let p = propInfo(from: dict) else {
-            print ("Failed to load \(dict)")
-            continue
-        }
-        if p.usage.contains(.group) {
-            print ("GROUP: \(p.propertyName)")
-            continue
-        } else if p.usage.contains(.subgroup) {
-            print ("Subgroup: \(p.hintStr)")
-        } else if p.usage.contains(.category) {
-            print ("Category")
-        } else {
-            let prefix: String
-            if p.usage == [] {
-                prefix = "SKIP: "
-                continue
-            } else {
-                prefix = ""
-            }
-            let hintStr: String
-            if p.hintStr != "" {
-                hintStr = "hintStr=\(p.hintStr)"
-            } else {
-                hintStr = ""
-            }
-            print ("    \(prefix)name=\(p.propertyName)/\(p.className) type=\(p.propertyType) hint=\(p.hint) \(hintStr) usage=\(p.usage)")
-        }
-    }
+
 
     let rootNode = Node3D()
     let camera = Camera3D ()
@@ -103,36 +63,75 @@ func loadScene (scene: SceneTree) {
         return n
     }
     rootNode.addChild(node: makeCuteNode(Vector3(x: 1, y: 1, z: 1)))
-    rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
-    rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
+//    rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
+//    rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
     scene.root?.addChild(node: rootNode)
 }
 
+class Demo {
+    init() {
+        print("Demo.Starting")
+    }
+    func call() {
+        print("Alive")
+    }
+    deinit{
+        print("Demo.Finishing")
+    }
+}
 
 @Godot
 class SpinningCube: Node3D {
+    var obj = Node3D()
+    var c: Callable?
+
+    deinit {
+        print("Killing Spinning Cube")
+    }
     public override func _ready() {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
+        let v = Variant(meshRender)
+        var x = Object(v)
         addChild(node: meshRender)
+
+        var xx = Button()
+        var d = Demo()
+        c = Callable { args in
+            print("calling demo")
+            d.call()
+            print ("In callable!")
+            return nil
+        }
     }
     
-    override func _input (event: InputEvent) {
-        switch event {
-        case let mouseEvent as InputEventMouseButton:
-            print("MouseButton: \(mouseEvent)")
-        case let mouseMotion as InputEventMouseMotion:
-            print("MouseMotion: \(mouseMotion)")
-        default:
-            print (event)
-        }        
-        
-        guard event.isPressed () && !event.isEcho () else { return }
-        print ("SpinningCube: event: isPressed ")
-    }
-    
+//    override func _input (event: InputEvent) {
+//        switch event {
+//        case let mouseEvent as InputEventMouseButton:
+//            print("MouseButton: \(mouseEvent)")
+//        case let mouseMotion as InputEventMouseMotion:
+//            print("MouseMotion: \(mouseMotion)")
+//        default:
+//            print (event)
+//        }        
+//        
+//        guard event.isPressed () && !event.isEcho () else { return }
+//        print ("SpinningCube: event: isPressed ")
+//    }
+
+    var count = 0
     public override func _process(delta: Double) {
         rotateY(angle: delta)
+        count += 1
+        if count == 1 {
+            print ("Going to kill myself")
+            queueFree()
+        }
+        //print ("IsValid after free: \(obj.isValid)")
+        if let c {
+            c.call()
+        }
+        c = nil
     }
 }
 

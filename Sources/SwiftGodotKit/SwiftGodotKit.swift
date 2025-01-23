@@ -86,17 +86,26 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
     loadSceneCb = loadScene
     loadProjectSettingsCb = loadProjectSettings
     initHookCb = initHook
-    
-    libgodot_gdextension_bind { godotGetProcAddr, libraryPtr, extensionInit in
+
+    libgodot_gdextension_bind {
+        godotGetProcAddr,
+        libraryPtr,
+        extensionInit in
         if let godotGetProcAddr {
-            let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
-            setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
+            initializeSwiftModule(
+                unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self),
+                unsafeBitCast(libraryPtr, to: OpaquePointer.self),
+                unsafeBitCast(extensionInit, to: OpaquePointer.self),
+                initHook: { initHookCb?($0) } ,
+                deInitHook: { x in print ("runGodot.Deinit") },
+                minimumInitializationLevel: .core
+            )
             library = OpaquePointer (libraryPtr)!
-            extensionInit?.pointee = GDExtensionInitialization(
-                minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
-                userdata: nil,
-                initialize: embeddedExtensionInit,
-                deinitialize: embeddedExtensionDeinit)
+//            extensionInit?.pointee = GDExtensionInitialization(
+//                minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
+//                userdata: nil,
+//                initialize: embeddedExtensionInit,
+//                deinitialize: embeddedExtensionDeinit)
             return 1
         }
         
