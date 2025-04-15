@@ -36,11 +36,11 @@ import SwiftGodotKit
 
 func propInfo (from: GDictionary) -> PropInfo? {
     guard let name = from ["name"]?.description else { return nil }
-    guard let type = Int (from ["type"] ?? Variant (Nil())) else { return nil }
+    guard let typeV = from["type"], let type = Int (typeV) else { return nil }
     guard let className = from ["class_name"]?.description else { return nil }
-    guard let hint = Int (from ["hint"] ?? Variant (Nil())) else { return nil }
+    guard let hintV = from["hint"], let hint = Int (hintV) else { return nil }
     guard let hint_string = from ["hint_string"]?.description else { return nil }
-    guard let usage = Int (from ["usage"] ?? Variant (Nil())) else { return nil }
+    guard let usageV = from["usage"], let usage = Int (usageV)  else { return nil }
     return PropInfo(propertyType: Variant.GType(rawValue: Int64(type))!,
                     propertyName: StringName(stringLiteral: name),
                     className: StringName (stringLiteral: className),
@@ -59,7 +59,15 @@ func loadScene (scene: SceneTree) {
     for x in a {
         print ("value is \(x)")
     }
-        
+
+    var x = GDScript()
+    x.sourceCode = "var x = MyResource.new()\n"
+    x.reload()
+    var runner = RefCounted()
+    runner.setScript(Variant(x))
+    releasePendingObjects()
+
+
     for dict in properties {
         guard let p = propInfo(from: dict) else {
             print ("Failed to load \(dict)")
@@ -108,9 +116,31 @@ func loadScene (scene: SceneTree) {
     scene.root?.addChild(node: rootNode)
 }
 
+@Godot
+class MyResource: Resource {
+    @Export var a: Float = 5.0
+
+    public required init() {
+        print("MyResource Created")
+        super.init()
+    }
+
+    public required init(nativeHandle: UnsafeRawPointer) {
+        print("MyResource Created with ahndle")
+        super.init(nativeHandle: nativeHandle)
+    }
+}
 
 @Godot
 class SpinningCube: Node3D {
+    public required init() {
+        print("Created")
+        super.init()
+    }
+
+    public required init(nativeHandle: UnsafeRawPointer) {
+        super.init(nativeHandle: nativeHandle)
+    }
     public override func _ready() {
         let meshRender = MeshInstance3D()
         meshRender.mesh = BoxMesh()
@@ -142,6 +172,7 @@ func registerTypes (level: GDExtension.InitializationLevel) {
     switch level {
     case .scene:
         register (type: SpinningCube.self)
+        register (type: MyResource.self)
     default:
         break
     }

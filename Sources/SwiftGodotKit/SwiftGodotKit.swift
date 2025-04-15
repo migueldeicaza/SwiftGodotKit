@@ -63,6 +63,52 @@ func withUnsafePtr (strings: [String], callback: (UnsafeMutablePointer<UnsafeMut
     cStringArray.deallocate()
 }
 
+class KitExtensionInterface: ExtensionInterface {
+
+    /// If your application is crashing due to the Variant leak fixes, please
+    /// enable this flag, and provide me with a test case, so I can find that
+    /// pesky scenario.
+    public let experimentalDisableVariantUnref = false
+
+    private let library: GDExtensionClassLibraryPtr
+    private let getProcAddrFun: GDExtensionInterfaceGetProcAddress
+
+    public init(library: GDExtensionClassLibraryPtr, getProcAddr: GDExtensionInterfaceGetProcAddress) {
+        self.library = library
+        self.getProcAddrFun = getProcAddr
+    }
+
+    public func variantShouldDeinit(content: UnsafeRawPointer) -> Bool {
+        return !experimentalDisableVariantUnref
+    }
+
+    public func objectShouldDeinit(handle: UnsafeRawPointer) -> Bool {
+        return true
+    }
+
+    public func objectInited(object: Wrapped) {}
+
+    public func objectDeinited(object: Wrapped) {}
+
+    public func variantInited(variant: Variant, content: UnsafeMutableRawPointer) {}
+
+    public func variantDeinited(variant: Variant, content: UnsafeMutableRawPointer) {}
+
+    public func sameDomain(handle: UnsafeRawPointer) -> Bool { true }
+
+    public func getLibrary() -> UnsafeMutableRawPointer {
+        return UnsafeMutableRawPointer(mutating: library)
+    }
+
+    public func getProcAddr() -> OpaquePointer {
+        return unsafeBitCast(getProcAddrFun, to: OpaquePointer.self)
+    }
+
+    func getCurrenDomain() -> UInt8 {
+        0
+    }
+}
+
 /// Starts godot with the specified parameters.
 ///
 /// This calls first `initHook()` once Godot has initialized, here you can register
@@ -89,8 +135,9 @@ public func runGodot (args: [String], initHook: @escaping (GDExtension.Initializ
     
     libgodot_gdextension_bind { godotGetProcAddr, libraryPtr, extensionInit in
         if let godotGetProcAddr {
-            let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
-            setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
+            var lib = KitExtensionInterface(library: libraryPtr!, getProcAddr: godotGetProcAddr)
+            setExtensionInterface(interface: lib)
+            //setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
             library = OpaquePointer (libraryPtr)!
             extensionInit?.pointee = GDExtensionInitialization(
                 minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
