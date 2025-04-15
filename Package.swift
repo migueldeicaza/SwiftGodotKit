@@ -22,9 +22,9 @@ let package = Package(
     dependencies: [
         // The revision below points to my SwiftGodot on the "libgodot-4.3" branch
         //.package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "6ad577cd22c3ee1abb40d1f3727ad9e9f35d5aa2")
-	.package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "7e4c34ccbc149cd61de3c8fa76a09f84bf5583f5")
+        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "bdbed377b20561882ca2910d54cf5db6aa8c51ba")
 
-	//        .package(path: "../../SwiftGodot"),
+	    //.package(path: "../../SwiftGodot"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
