@@ -24,7 +24,7 @@ let package = Package(
         // This points to the `swiftgodotkit` branch
         //.package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "c613b4c2596a5ee8c8a1b0a66dd79798753d1db5")
 
-        //.package(path: "../SwiftGodot"),
+        .package(path: "../SwiftGodot"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
