@@ -13,11 +13,26 @@ an app.
 ## Using this
 
 This is a work-in-progress and requires some assembly until I have
-time to package this properly.
+time to package this properly.  The instructions below currently work
+for Mac/ARM, but you can adjust for other platforms until I am done:
 
-This branch requires a peer "SwiftGodot" for branch "libgodot-4.3" and
-it also requires the scripts/ios/libgodot.xcframework that is built from
-github.com/migeran/libgodot_project branch libgodot_migeran_next_44 using `build_libgodot.sh`
+This branch requires the following:
+
+* migueldeicaza/SwiftGodot, checked out at branch `swiftgodotkit` as a peer of this
+* migueldeicaza/libgodot checked out at branch `libgodot_44_stable`
+
+You will need to build the runtime for libgodot, like this:
+
+```
+cd libgodot
+scons target=template_debug library_type=shared_library debug_symbols=yes platform=macos vulkan_sdk_path=~/MoltenVK
+```
+
+Then, once you have that, you will do:
+
+```
+(cd SwiftGodotKit/scripts; SKIP=1 bash make-libgodot.xcframework ../../SwiftGodot ../../libgodot ../..)
+```
 
 ## Sample
 
