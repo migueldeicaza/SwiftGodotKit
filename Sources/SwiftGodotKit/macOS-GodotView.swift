@@ -36,7 +36,9 @@ public class GodotView: NSView {
     }
     
     deinit {
-        renderingLayer?.removeFromSuperlayer()
+        if renderingLayer?.superlayer != nil {
+            renderingLayer?.removeFromSuperlayer()
+        }
     }
     
     open var windowId: Int {

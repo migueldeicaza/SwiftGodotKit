@@ -4,17 +4,19 @@ if test ! -e make-libgodot.xcframework; then
     echo this script needs to be executed from the SwiftGodotKit/scripts directory
     exit 1
 fi
-if test x$2 = x; then
+if test x$3 = x; then
    echo usage is: make-libgodot.xcframework SwiftGodotDIR libgodotDIR OUTPUT_DIR
    exit 1
 fi
-SG=$1
-LG=$2
-ODIR=$3
+SWIFTGODOT_SOURCE_DIR=$1
+LIBGODOT_SOURCE_DIR=$2
+OUTPUT_DIR=$3
+
+# Remote build stuff
 intel=macpro
 arm=studio.local
 arm2=localhost
-dir=$LG
+dir=$LIBGODOT_SOURCE_DIR
 
 # The hash for the godot that has been modified to be embeddable
 # lives in libgodot_project/godot in migerans tree
@@ -43,31 +45,41 @@ if test x$SKIP = x; then
   build $arm "/opt/homebrew/bin/$build_base platform=ios vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $ios_lib
   build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossim_lib
   build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes arch=x86_64 vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossimx86_lib
+else
+  cp $LIBGODOT_SOURCE_DIR/bin/libgodot.macos.template_debug.arm64.dylib .
 fi
 
 # Now make the xcframework
-rm -rf $ODIR/libgodot.xcframework
-rm -rf $ODIR/libgodot.xcframework.zip
+rm -rf $OUTPUT_DIR/libgodot.xcframework
+rm -rf $OUTPUT_DIR/libgodot.xcframework.zip
 tmp=/tmp/dir-$$
 mkdir $tmp
-cp $SG/Sources/GDExtension/include/gdextension_interface.h $tmp/gdextension_interface.h
-cp $LG/core/extension/libgodot.h $tmp/libgodot.h
+cp $SWIFTGODOT_SOURCE_DIR/Sources/GDExtension/include/gdextension_interface.h $tmp/gdextension_interface.h
+cp $LIBGODOT_SOURCE_DIR/core/extension/libgodot.h $tmp/libgodot.h
 cat > $tmp/module.modulemap << EOF
 module libgodot {
     header "libgodot.h"
     export *
 }
 EOF
+
 rm -rf libgodot.xcframework
 rm -rf libgodot_ios.xcframework
-install_name_tool -id @rpath/libgodot.dylib $arm_dylib
-install_name_tool -id @rpath/libgodot.dylib $intel_dylib
-lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
-lipo -create -output libgodotSim.a -arch arm64 $iossim_lib -arch x86_64 $iossimx86_lib
-xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
-xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output libgodot_ios.xcframework
-zip -r $ODIR/libgodot.xcframework.zip libgodot.xcframework
-checksum=`swift package compute-checksum $ODIR/libgodot.xcframework.zip`
+
+if test x$SKIP = x; then
+    install_name_tool -id @rpath/libgodot.dylib $arm_dylib
+    install_name_tool -id @rpath/libgodot.dylib $intel_dylib
+    lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
+    lipo -create -output libgodotSim.a -arch arm64 $iossim_lib -arch x86_64 $iossimx86_lib
+    xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
+    xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output libgodot_ios.xcframework
+else
+    install_name_tool -id @rpath/libgodot.dylib $arm_dylib
+    lipo -create -output libgodot.dylib -arch arm64 $arm_dylib
+    xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
+fi
+zip -r $OUTPUT_DIR/libgodot.xcframework.zip libgodot.xcframework
+checksum=`swift package compute-checksum $OUTPUT_DIR/libgodot.xcframework.zip`
 
 #rm -rf /tmp/dir-$$
 exit 0

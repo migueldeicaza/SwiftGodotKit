@@ -12,11 +12,12 @@ import SwiftGodot
 import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidResignActive(_ notification: Notification) {
-        Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusOut))
+        // TODO: Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusOut))
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
-        Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusIn))
+
+        // TODO: Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusIn))
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

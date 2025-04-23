@@ -7,26 +7,27 @@ import SwiftUI
 import SwiftGodot
 
 /// You create a single Godot App per application, this contains your game PCK
+@Observable
 public class GodotApp: ObservableObject {
     let path: String
     let renderingDriver: String
     let renderingMethod: String
     let extraArgs: [String]
     let maxTouchCount = 32
-    var pendingStart = Set<TTGodotAppView>()
-    var pendingLayout = Set<TTGodotAppView>()
-    var pendingWindow = Set<TTGodotWindow>()
-    
+    @ObservationIgnored var pendingStart = Set<TTGodotAppView>()
+    @ObservationIgnored var pendingLayout = Set<TTGodotAppView>()
+    @ObservationIgnored var pendingWindow = Set<TTGodotWindow>()
+
     #if os(macOS)
     internal let appDelegate: GodotAppDelegate
     #endif
 
     #if os(iOS)
-    var touches: [UITouch?] = []
+    @ObservationIgnored var touches: [UITouch?] = []
     #endif
     
     /// The Godot instance for this host, if it was successfully created
-    public var instance: GodotInstance?
+    @ObservationIgnored public var instance: GodotInstance?
   
     /// Initializes Godot to render a scene.
     /// - Parameters:
@@ -82,7 +83,7 @@ public class GodotApp: ObservableObject {
         if instance != nil {
             return true
         }
-        
+
         #if os(iOS)
         touches = [UITouch?](repeating: nil, count: maxTouchCount)
         #endif

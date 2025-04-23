@@ -92,8 +92,9 @@ struct ContentView: View {
             }
         }
     }
-    
-    @StateObject var app = GodotApp(packFile: "main.pck", godotPackPath: "/tmp")
+
+    @State var app = GodotApp(packFile: "main.pck", godotPackPath: "/tmp")
+
     var body: some View {
         VStack {
             Image(systemName: "globe")
@@ -107,7 +108,7 @@ struct ContentView: View {
             }
         }
         .padding()
-        .environmentObject(app)
+        .environment(\.godotApp, app)
         .onAppear {
             app.start()
             print ("GodotApp: Started")

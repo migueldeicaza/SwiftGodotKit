@@ -53,15 +53,64 @@ func withUnsafePtr (strings: [String], callback: (UnsafeMutablePointer<UnsafeMut
     cStringArray.deallocate()
 }
 
+//                    let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
+// setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
+
+class EmbeddedExtensionInterface: ExtensionInterface {
+    func variantShouldDeinit(content: UnsafeRawPointer) -> Bool {
+        return true
+    }
+    
+    func objectShouldDeinit(handle: UnsafeRawPointer) -> Bool {
+        return true
+    }
+    
+    func objectInited(object: SwiftGodot.Wrapped) {
+    }
+    
+    func objectDeinited(object: SwiftGodot.Wrapped) {
+    }
+    
+    func variantInited(variant: SwiftGodot.Variant, content: UnsafeMutableRawPointer) {
+    }
+    
+    func variantDeinited(variant: SwiftGodot.Variant, content: UnsafeMutableRawPointer) {
+    }
+    
+    func getLibrary() -> UnsafeMutableRawPointer {
+        return library
+    }
+    
+    func getProcAddr() -> OpaquePointer {
+        return unsafeBitCast(getProcAddrFun, to: OpaquePointer.self)
+    }
+    
+    func sameDomain(handle: UnsafeRawPointer) -> Bool {
+        true
+    }
+    
+    func getCurrenDomain() -> UInt8 {
+        0
+    }
+
+    var library: UnsafeMutableRawPointer
+    var getProcAddrFun: GDExtensionInterfaceGetProcAddress
+
+    init(library: UnsafeMutableRawPointer, getProcAddrFun: GDExtensionInterfaceGetProcAddress) {
+        self.library = library
+        self.getProcAddrFun = getProcAddrFun
+    }
+}
+
 extension GodotInstance {
     public static func create(args: [String]) -> GodotInstance? {
         var instance: UnsafeMutableRawPointer? = nil
-        var argsWithCmd = [ Bundle.main.executablePath ?? "" ] + args
+        let argsWithCmd = [ Bundle.main.executablePath ?? "" ] + args
         withUnsafePtr(strings: argsWithCmd, callback: { cstr in
             instance = libgodot.libgodot_create_godot_instance/*gCreateGodotInstance*/(Int32(argsWithCmd.count), cstr, { godotGetProcAddr, libraryPtr, extensionInit in
                 if let godotGetProcAddr {
-                    let bit = unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self)
-                    setExtensionInterface(to: bit, library: OpaquePointer (libraryPtr!))
+                    let ext = EmbeddedExtensionInterface(library: UnsafeMutableRawPointer(libraryPtr!), getProcAddrFun: godotGetProcAddr)
+                    setExtensionInterface(interface: ext)
                     extensionInit?.pointee = GDExtensionInitialization(
                         minimum_initialization_level: GDEXTENSION_INITIALIZATION_CORE,
                         userdata: nil,
@@ -70,7 +119,7 @@ extension GodotInstance {
                     return 1
                 }
                 return 0
-            })
+            }, nil, nil, nil, nil)
         })
         if instance != nil {
             return GodotInstance(nativeHandle: instance!)

@@ -16,7 +16,7 @@ public struct GodotAppView: UIViewRepresentable {
 
     public func makeUIView(context: Context) -> UIGodotAppView {
         guard let app else {
-            Logger.App.error("No GodotApp instance")
+            Logger.App.error("No GodotApp instance, you must pass it on the environment using \\.godotApp")
             return view
         }
         

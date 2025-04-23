@@ -21,8 +21,9 @@ let package = Package(
     ],
     dependencies: [
         // The revision below points to my SwiftGodot on the "libgodot-4.3" branch
-        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "6ad577cd22c3ee1abb40d1f3727ad9e9f35d5aa2")
-        
+        // This points to the `swiftgodotkit` branch
+        //.package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "c613b4c2596a5ee8c8a1b0a66dd79798753d1db5")
+
         //.package(path: "../SwiftGodot"),
     ],
     targets: [
@@ -33,9 +34,9 @@ let package = Package(
             dependencies: [
                 "SwiftGodot",
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
-                .target(name: "MoltenVK", condition: .when(platforms: [.iOS])),
-                .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
+//                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
+//                .target(name: "MoltenVK", condition: .when(platforms: [.iOS])),
+//                .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ]
         ),
         
@@ -64,17 +65,17 @@ let package = Package(
             dependencies: [
                 "SwiftGodotKit",
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
+//                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
                 .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ],
             resources: [.copy ("Project")]
         ),
-        .binaryTarget(name: "MoltenVK", path: "scripts/MoltenVK.xcframework"),
+        //.binaryTarget(name: "MoltenVK", path: "scripts/MoltenVK.xcframework"),
         .binaryTarget(name: "mac_libgodot",
                       path: "scripts/libgodot.xcframework"),
-        .binaryTarget(name: "ios_libgodot",
-                      path: "scripts/ios/libgodot.xcframework"),
-
+//        .binaryTarget(name: "ios_libgodot",
+//                      path: "scripts/ios/libgodot.xcframework"),
+//
 //        .binaryTarget (
 //            name: "binary_libgodot",
 //            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/p4_3-1.0.1/libgodot.xcframework.zip",

@@ -8,17 +8,17 @@ import SwiftUI
 import SwiftGodot
 #if os(macOS)
 public struct GodotAppView: NSViewRepresentable {
-    var view = NSGodotAppView(frame: CGRect.zero)
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
+    var view = NSGodotAppView(frame: CGRect.zero)
 
-    public init () { }
-    
+    public init () {
+    }
+
     public func makeNSView(context: Context) -> NSGodotAppView {
         guard let app else {
-            Logger.App.error("No GodotApp instance")
+            Logger.App.error("No GodotApp instance, you must pass it on the environment using \\.godotApp")
             return view
         }
-        
         view.app = app
         return view
     }
