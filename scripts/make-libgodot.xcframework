@@ -46,7 +46,8 @@ if test x$SKIP = x; then
   build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossim_lib
   build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes arch=x86_64 vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossimx86_lib
 else
-  cp $LIBGODOT_SOURCE_DIR/bin/libgodot.macos.template_debug.arm64.dylib .
+  cp $LIBGODOT_SOURCE_DIR/bin/$arm_dylib .
+  cp $LIBGODOT_SOURCE_DIR/bin/$ios_lib .
 fi
 
 # Now make the xcframework
@@ -63,8 +64,8 @@ module libgodot {
 }
 EOF
 
-rm -rf libgodot.xcframework
-rm -rf libgodot_ios.xcframework
+rm -rf $OUTPUT_DIR/mac/libgodot.xcframework
+rm -rf $OUTPUT_DIR/ios/libgodot.xcframework
 
 if test x$SKIP = x; then
     install_name_tool -id @rpath/libgodot.dylib $arm_dylib
@@ -72,15 +73,21 @@ if test x$SKIP = x; then
     lipo -create -output libgodot.dylib -arch arm64 $arm_dylib -arch x86_64 $intel_dylib
     lipo -create -output libgodotSim.a -arch arm64 $iossim_lib -arch x86_64 $iossimx86_lib
     xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
-    xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output libgodot_ios.xcframework
+    xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output libgodot.xcframework
 else
     install_name_tool -id @rpath/libgodot.dylib $arm_dylib
     lipo -create -output libgodot.dylib -arch arm64 $arm_dylib
-    xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
+    xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output $OUTPUT_DIR/mac/libgodot.xcframework
+    xcodebuild -create-xcframework -library $ios_lib -headers $tmp -output $OUTPUT_DIR/ios/libgodot.xcframework
 fi
-zip -r $OUTPUT_DIR/libgodot.xcframework.zip libgodot.xcframework
-checksum=`swift package compute-checksum $OUTPUT_DIR/libgodot.xcframework.zip`
+zip -r $OUTPUT_DIR/mac/libgodot.xcframework.zip $OUTPUT_DIR/mac/libgodot.xcframework
+zip -r $OUTPUT_DIR/ios/libgodot.xcframework.zip $OUTPUT_DIR/ios/libgodot.xcframework
+checksum_mac=`swift package compute-checksum $OUTPUT_DIR/mac/libgodot.xcframework.zip`
+checksum_ios=`swift package compute-checksum $OUTPUT_DIR/ios/libgodot.xcframework.zip`
 
+echo Checksums:
+echo    Mac: $checksum_mac
+echo    iOS: $checksum_ios
 #rm -rf /tmp/dir-$$
 exit 0
 

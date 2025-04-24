@@ -7,7 +7,7 @@ let package = Package(
     name: "SwiftGodotKit",
     platforms: [
         .macOS(.v14),
-        .iOS(.v15)
+        .iOS(.v17)
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -34,8 +34,8 @@ let package = Package(
             dependencies: [
                 "SwiftGodot",
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-//                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
-//                .target(name: "MoltenVK", condition: .when(platforms: [.iOS])),
+                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
+                .target(name: "MoltenVK", condition: .when(platforms: [.iOS])),
 //                .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ]
         ),
@@ -65,17 +65,17 @@ let package = Package(
             dependencies: [
                 "SwiftGodotKit",
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-//                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
+                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
                 .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ],
             resources: [.copy ("Project")]
         ),
-        //.binaryTarget(name: "MoltenVK", path: "scripts/MoltenVK.xcframework"),
+        .binaryTarget(name: "MoltenVK", path: "build/MoltenVK.xcframework"),
         .binaryTarget(name: "mac_libgodot",
-                      path: "scripts/libgodot.xcframework"),
-//        .binaryTarget(name: "ios_libgodot",
-//                      path: "scripts/ios/libgodot.xcframework"),
-//
+                      path: "build/mac/libgodot.xcframework"),
+        .binaryTarget(name: "ios_libgodot",
+                      path: "build/ios/libgodot.xcframework"),
+
 //        .binaryTarget (
 //            name: "binary_libgodot",
 //            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/p4_3-1.0.1/libgodot.xcframework.zip",

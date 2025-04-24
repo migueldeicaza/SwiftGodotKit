@@ -2,12 +2,11 @@
 //  MacOS/GodotView.swift
 //
 //
-
+#if os(macOS)
 import AppKit
 import Foundation
 
 import SwiftGodot
-#if os(macOS)
 public class GodotView: NSView {
     static var keymap: [UInt16: Key] = initKeyMap()
     static var locationMap: [UInt16: KeyLocation] = initLocationMap()
