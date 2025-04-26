@@ -14,7 +14,6 @@ let package = Package(
         .library(
             name: "SwiftGodotKit",
             targets: ["SwiftGodotKit"]),
-s
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
     ],
     dependencies: [
@@ -37,12 +36,7 @@ s
                 //.target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
             ]
         ),
-        
-        .executableTarget(
-            name: "UglySample",
-            dependencies: ["SwiftGodotKit"]
-        ),
-        
+
         .executableTarget(
             name: "TrivialSample",
             dependencies: ["SwiftGodotKit"],
@@ -52,35 +46,19 @@ s
             resources: [.copy("main.pck")]
         ),
 
-        .executableTarget(
-            name: "Properties",
-            dependencies: ["SwiftGodotKit"]
-        ),
-        
-        // This is a sample that I am porting
-        .executableTarget(
-            name: "Dodge",
-            dependencies: [
-                "SwiftGodotKit",
-                .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
-                .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
-                .target(name: "libgodot", condition: .when(platforms: [.linux, .windows])),
-            ],
-            resources: [.copy ("Project")]
-        ),
         // Release 0.60.1 payloads
         .binaryTarget(
             name: "MoltenVK",
-            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/0.60.1/MoltenVK.xcframework.zip",
+            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/0.60.2/MoltenVK.xcframework.zip",
             checksum: "92b0d55469f924256502f96122f5becf54af8b1321c768f80a92581bb460a414"),
         .binaryTarget(
             name: "mac_libgodot",
-            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/0.60.1/libgodot.xcframework.zip",
-            checksum: "78ae957377d8c7c8dbc9e7a32799a054daa44dfa4e365ca45665596b3a02715a"),
+            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/0.60.2/mac_libgodot.xcframework.zip",
+            checksum: "652f731db8ce584af743c6957f75d0f90e7575e363eaee481cb43f4e0ccf8dce"),
         .binaryTarget(
             name: "ios_libgodot",
-            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/0.60.1/maclibgodot.xcframework.zip",
-            checksum: "3a15ba49071cf521b5378c4bbdfd43b1ffade8a30c875308ced186462cf9cab1"),
+            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/0.60.2/ios_libgodot.xcframework.zip",
+            checksum: "9a97f2189f6242695817af8480861e04121f9c3e043a9690a9396bb48c6142e4"),
 
 
         // Use these for local developoment.
@@ -90,11 +68,6 @@ s
 //        .binaryTarget(name: "ios_libgodot",
 //                      path: "build/ios/libgodot.xcframework"),
 //
-//        .binaryTarget (
-//            name: "binary_libgodot",
-//            url: "https://github.com/migueldeicaza/SwiftGodotKit/releases/download/p4_3-1.0.1/libgodot.xcframework.zip",
-//            checksum: "da73a96dc044e7b4feb464bd99f9fbb21d55bcf1f7f4e609690bd85ce3043bc6"
-//        ),
         .systemLibrary(
             name: "libgodot"
         ),

@@ -57,10 +57,6 @@ if test x$SKIP = x; then
     build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossim_lib
     build $arm "/opt/homebrew/bin/$build_base platform=ios ios_simulator=yes arch=x86_64 vulkan_sdk_path=~/MoltenVK/ dev_build=yes" $iossimx86_lib
   fi
-else
-  cp $LIBGODOT_SOURCE_DIR/bin/$arm_dylib .
-  cp $LIBGODOT_SOURCE_DIR/bin/$ios_lib .
-  cp $LIBGODOT_SOURCE_DIR/bin/$iossim_lib .
 fi
 
 # Now make the xcframework
@@ -105,8 +101,9 @@ if $compile_sim; then
     xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output $OUTPUT_DIR/ios/libgodot.xcframework
 fi
 
-zip -r $OUTPUT_DIR/mac/libgodot.xcframework.zip $OUTPUT_DIR/mac/libgodot.xcframework
-zip -r $OUTPUT_DIR/ios/libgodot.xcframework.zip $OUTPUT_DIR/ios/libgodot.xcframework
+(cd $OUTPUT_DIR/mac; ditto -c -k --sequesterRsrc --keepParent libgodot.xcframework ../mac_libgodot.xcframework.zip)
+(cd $OUTPUT_DIR/ios; ditto -c -k --sequesterRsrc --keepParent libgodot.xcframework ../ios_libgodot.xcframework.zip)
+
 checksum_mac=`swift package compute-checksum $OUTPUT_DIR/mac/libgodot.xcframework.zip`
 checksum_ios=`swift package compute-checksum $OUTPUT_DIR/ios/libgodot.xcframework.zip`
     
