@@ -33,7 +33,6 @@ is no support for the iOS simulator, as Godot does not really run on those).
 
 Just reference this module from your Package.swift file or from Xcode.
 
-
 ## Sample
 
 A simple SwiftUI API is provided.
@@ -61,6 +60,11 @@ struct ContentView: View {
 ```
 
 There can only be one GodotApp in your application, but you can reference different scenes from it.
+
+# Discussions
+
+You can join our [https://github.com/migueldeicaza/SwiftGodot/discussions](discussions on Github) or the #swiftgodotkit
+channel on the [Swift on Godot Slack server](https://join.slack.com/t/swiftongodot/shared_invite/zt-2aqygohvb-stSRGEAN~c3awuMwtaqCAA).
 
 
 # Sausage Making Details 
