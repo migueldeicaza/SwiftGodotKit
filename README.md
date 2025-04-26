@@ -25,9 +25,9 @@ Godot UI elements created programatically.  This sample runs on MacOS.
 ### iOS Sample Code
 
 For iOS, you need a proper container, you can look at the peer
-`SwiftGodotKitSamples` project which hosts this library and a sample
-and deploys to iOS devices (there is no support for the iOS simulator,
-as Godot does not really run on those).
+[`SwiftGodotKitSamples`](https://github.com/migueldeicaza/SwiftGodotKitSamples) 
+project which hosts this library and a sample and deploys to iOS devices (there 
+is no support for the iOS simulator, as Godot does not really run on those).
 
 ## Using this
 
@@ -74,6 +74,7 @@ git clone git@github.com:migueldeicaza/SwiftGodotKit
 git clone git@github.com:migueldeicaza/libgodot
 ```
 
+For LibGodot, you want to use the libgodot_44_stable branch
 Compile libgodot, this sample shows how I do this myself, but
 you can pass the flags that make sense for your scenarios:
 
