@@ -16,7 +16,7 @@ OUTPUT_DIR=$3
 intel=macpro
 arm=studio.local
 arm2=localhost
-dir=$LIBGODOT_SOURCE_DIR
+dir=`pwd`/$LIBGODOT_SOURCE_DIR
 
 # The hash for the godot that has been modified to be embeddable
 # lives in libgodot_project/godot in migerans tree
@@ -48,6 +48,7 @@ if test x$SKIP = x; then
 else
   cp $LIBGODOT_SOURCE_DIR/bin/$arm_dylib .
   cp $LIBGODOT_SOURCE_DIR/bin/$ios_lib .
+  cp $LIBGODOT_SOURCE_DIR/bin/$iossim_lib .
 fi
 
 # Now make the xcframework
@@ -75,19 +76,28 @@ if test x$SKIP = x; then
     xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output libgodot.xcframework
     xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output libgodot.xcframework
 else
+    # Slowly updating this one, the old one lacks the Mac for example
     install_name_tool -id @rpath/libgodot.dylib $arm_dylib
     lipo -create -output libgodot.dylib -arch arm64 $arm_dylib
+    lipo -create -output libgodotSim.a -arch arm64 $iossim_lib 
     xcodebuild -create-xcframework -library libgodot.dylib -headers $tmp -output $OUTPUT_DIR/mac/libgodot.xcframework
+    # Works:
     xcodebuild -create-xcframework -library $ios_lib -headers $tmp -output $OUTPUT_DIR/ios/libgodot.xcframework
+    # This would be a second step for the above, but can we do it in one go?
+    xcodebuild -create-xcframework -library libgodotSim.a -headers $tmp -output $OUTPUT_DIR/ios/libgodot.xcframework
 fi
-zip -r $OUTPUT_DIR/mac/libgodot.xcframework.zip $OUTPUT_DIR/mac/libgodot.xcframework
-zip -r $OUTPUT_DIR/ios/libgodot.xcframework.zip $OUTPUT_DIR/ios/libgodot.xcframework
-checksum_mac=`swift package compute-checksum $OUTPUT_DIR/mac/libgodot.xcframework.zip`
-checksum_ios=`swift package compute-checksum $OUTPUT_DIR/ios/libgodot.xcframework.zip`
 
-echo Checksums:
-echo    Mac: $checksum_mac
-echo    iOS: $checksum_ios
+if false; then
+    zip -r $OUTPUT_DIR/mac/libgodot.xcframework.zip $OUTPUT_DIR/mac/libgodot.xcframework
+    zip -r $OUTPUT_DIR/ios/libgodot.xcframework.zip $OUTPUT_DIR/ios/libgodot.xcframework
+    checksum_mac=`swift package compute-checksum $OUTPUT_DIR/mac/libgodot.xcframework.zip`
+    checksum_ios=`swift package compute-checksum $OUTPUT_DIR/ios/libgodot.xcframework.zip`
+    
+    echo Checksums:
+    echo    Mac: $checksum_mac
+    echo    iOS: $checksum_ios
+fi
+
 #rm -rf /tmp/dir-$$
 exit 0
 
