@@ -6,33 +6,33 @@ provides the API binding to the Godot API.
 # New SwiftGodotKit
 
 This branch contains the new embeddable system that is better suited
-to be embedded into an existing iOS app (Mac support is not ready),
-and allows either a full game to be displayed, or indidivual parts in
-an app.
+to be embedded into an existing iOS and Mac apps and allows either a
+full game to be displayed, or indidivual parts in an app.  This is
+based on the new 4.4-based `libgodot` patches that turn Godot into an
+embeddable library.
+
+If you are looking for the old version that only ran on MacOS, check
+out the `legacy` branch.
+
+## Sample Code
+
+### MacOS Sample Code
+
+This module contains a `TrivialSample` example code that shows both
+how to embed a Godot-packaged game (PCK files) as well as embedding
+Godot UI elements created programatically.  This sample runs on MacOS.
+
+### iOS Sample Code
+
+For iOS, you need a proper container, you can look at the peer
+`SwiftGodotKitSamples` project which hosts this library and a sample
+and deploys to iOS devices (there is no support for the iOS simulator,
+as Godot does not really run on those).
 
 ## Using this
 
-This is a work-in-progress and requires some assembly until I have
-time to package this properly.  The instructions below currently work
-for Mac/ARM, but you can adjust for other platforms until I am done:
+Just reference this module from your Package.swift file or from Xcode.
 
-This branch requires the following:
-
-* migueldeicaza/SwiftGodot, checked out at branch `swiftgodotkit` as a peer of this
-* migueldeicaza/libgodot checked out at branch `libgodot_44_stable`
-
-You will need to build the runtime for libgodot, like this:
-
-```
-cd libgodot
-scons target=template_debug library_type=shared_library debug_symbols=yes platform=macos vulkan_sdk_path=~/MoltenVK
-```
-
-Then, once you have that, you will do:
-
-```
-(cd SwiftGodotKit/scripts; SKIP=1 bash make-libgodot.xcframework ../../SwiftGodot ../../libgodot ../..)
-```
 
 ## Sample
 
@@ -52,20 +52,20 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Text("Game is below:")
-            GodotAppView(app: app)
+            GodotAppView()
                 .padding()
         }
+	.environment(\.godotApp, app)
     }
 }
 ```
 
+There can only be one GodotApp in your application, but you can reference different scenes from it.
+
 
 # Sausage Making Details 
 
-If you want to compile your own version of `libgodot.framework`, follow 
-these instructions
-
-Check out SwiftGodot and SwiftGodotKit as peers as well as a version
+Check out SwiftGodotKit and `libgodot` as peers as well as a version
 of Godot suitable to be used as a library:
 
 ```
@@ -75,7 +75,8 @@ git clone git@github.com:migueldeicaza/libgodot
 ```
 
 Compile libgodot, this sample shows how I do this myself, but
-you could have different versions
+you can pass the flags that make sense for your scenarios:
+
 
 ```
 cd libgodot
@@ -93,12 +94,3 @@ sh -x make-libgodot.xcframework ../../SwiftGodot ../../libgodot /tmp/
 
 Then you can reference that version of the libgodot.xcframework
 
-## Details
-
-This relies currently on the LibGodot patch that is currently pending
-approval:
-
-    https://github.com/godotengine/godot/pull/72883
-
-For your convenience, I have packaged the embeddable Godot for Mac as an `xcframework`
-so merely taking a dependency on this package should get everything that you need
