@@ -10,7 +10,9 @@ import libgodot
 import QuartzCore
 @_implementationOnly import GDExtension
 import os
-var initHookCb: ((GDExtension.InitializationLevel) -> ())?
+
+public var initHookCb: ((GDExtension.InitializationLevel) -> ())?
+public var deinitHookCb: ((GDExtension.InitializationLevel) -> ())?
 
 let logger = Logger(subsystem: "io.github.migueldeicaza.swiftgodotkit", category: "general")
 
@@ -21,14 +23,17 @@ extension GDExtension.InitializationLevel {
 }
 
 func embeddedExtensionInit (userData: UnsafeMutableRawPointer?, l: GDExtensionInitializationLevel) {
-    print ("SwiftEmbed: Register our types here, level: \(l)")
+    let level = GDExtension.InitializationLevel(integerValue: l.rawValue)
+    print ("SwiftEmbed: Register our types here, level: \(level)")
     if let cb = initHookCb {
         cb (GDExtension.InitializationLevel(integerValue: l.rawValue))
     }
 }
 
 func embeddedExtensionDeinit (userData: UnsafeMutableRawPointer?, l: GDExtensionInitializationLevel) {
-    print ("SwiftEmbed: Unregister here")
+    if let cb = deinitHookCb {
+        cb (GDExtension.InitializationLevel(integerValue: l.rawValue))
+    }
 }
 
 // Courtesy of GPT-4

@@ -32,8 +32,15 @@ class SpinningCube: Node3D {
 }
 
 struct ContentView: View {
-    
-    func trivial(){
+    init() {
+        initHookCb = { level in
+            if level == .scene {
+                register(type: SpinningCube.self)
+            }
+        }
+    }
+
+    func trivial() -> Node3D {
         let rootNode = Node3D()
         let camera = Camera3D ()
         camera.current = true
@@ -49,7 +56,8 @@ struct ContentView: View {
         rootNode.addChild(node: makeCuteNode(Vector3(x: 1, y: 1, z: 1)))
         rootNode.addChild(node: makeCuteNode(Vector3(x: -1, y: -1, z: -1)))
         rootNode.addChild(node: makeCuteNode(Vector3(x: 0, y: 1, z: 1)))
-        // scene.root?.addChild(node: rootNode)
+
+        return rootNode
     }
 
     var extraViews: some View {
@@ -89,6 +97,9 @@ struct ContentView: View {
                 button2.text = "Another Button 3"
                 ctr.addChild(node: button1)
                 ctr.addChild(node: button2)
+            }
+            GodotWindow { sub in
+                sub.addChild(node: trivial())
             }
         }
     }
