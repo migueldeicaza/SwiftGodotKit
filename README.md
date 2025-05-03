@@ -63,7 +63,7 @@ There can only be one GodotApp in your application, but you can reference differ
 
 # Discussions
 
-You can join our [https://github.com/migueldeicaza/SwiftGodot/discussions](discussions on Github) or the #swiftgodotkit
+You can join our [Discussions on GitHub](https://github.com/migueldeicaza/SwiftGodot/discussions) or the #swiftgodotkit
 channel on the [Swift on Godot Slack server](https://join.slack.com/t/swiftongodot/shared_invite/zt-2aqygohvb-stSRGEAN~c3awuMwtaqCAA).
 
 
