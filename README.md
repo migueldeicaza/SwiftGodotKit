@@ -1,17 +1,17 @@
 SwiftGodotKit provides a way of embedding Godot into an existing Swift
 application and driving Godot from Swift, without having to use an
-extension.   This is a companion to [SwiftGodot](https://github.com/migueldeicaza/SwiftGodot) which
+extension.   This is a companion to [SwiftGodot](https://github.com/migueldeicaza/SwiftGodot), which
 provides the API binding to the Godot API.
 
 # New SwiftGodotKit
 
 This branch contains the new embeddable system that is better suited
-to be embedded into an existing iOS and Mac apps and allows either a
-full game to be displayed, or indidivual parts in an app.  This is
+to be embedded into an existing iOS and Mac app, and allows either a
+full game to be displayed, or individual parts in an app.  This is
 based on the new 4.4-based `libgodot` patches that turn Godot into an
 embeddable library.
 
-If you are looking for the old version that only ran on MacOS, check
+If you are looking for the old version that only ran on macOS, check
 out the `legacy` branch.
 
 ## Sample Code
@@ -19,15 +19,15 @@ out the `legacy` branch.
 ### MacOS Sample Code
 
 This module contains a `TrivialSample` example code that shows both
-how to embed a Godot-packaged game (PCK files) as well as embedding
-Godot UI elements created programatically.  This sample runs on MacOS.
+how to embed a Godot-packaged game (PCK files), as well as how to embed
+Godot UI elements are created programmatically.  This sample runs on macOS.
 
 ### iOS Sample Code
 
-For iOS, you need a proper container, you can look at the peer
+For iOS, you need a proper container; you can look at the peer
 [`SwiftGodotKitSamples`](https://github.com/migueldeicaza/SwiftGodotKitSamples) 
-project which hosts this library and a sample and deploys to iOS devices (there 
-is no support for the iOS simulator, as Godot does not really run on those).
+project which hosts this library and a sample, and deploys to iOS devices (there 
+is no support for the iOS simulator, as Godot does not run on those).
 
 ## Using this
 
@@ -40,7 +40,7 @@ A simple SwiftUI API is provided.
 In the example below, in an existing iOS project type using SwiftUI,
 add a Godot PCK file to your project, and then call it like this:
 
-```
+```swift
 import SwiftUI
 import SwiftGodot
 import SwiftGodotKit
