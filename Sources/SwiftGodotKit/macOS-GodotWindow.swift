@@ -88,6 +88,7 @@ public class NSGodotWindow: GodotView {
     
     public override func removeFromSuperview() {
         subwindow?.getParent()?.removeChild(node: subwindow)
+        super.removeFromSuperview()
     }
 }
 #endif
