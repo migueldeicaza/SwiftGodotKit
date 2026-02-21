@@ -90,6 +90,11 @@ public class GodotApp: ObservableObject {
     @ObservationIgnored private var launchSourceOverride: String?
     @ObservationIgnored private var launchSceneOverride: String?
 
+    private enum StartupSource {
+        case directory(String)
+        case packFile(String)
+    }
+
     /// Initializes Godot to render a scene.
     /// - Parameters:
     ///  - packFile: the name of the pack file in the godotPackPath.
@@ -168,17 +173,18 @@ public class GodotApp: ObservableObject {
         #if os(iOS)
         touches = [UITouch?](repeating: nil, count: maxTouchCount)
         #endif
-        var args: [String] = []
-        var isDirectory: ObjCBool = false
+        let scene = normalizedScene(launchSceneOverride)
         let sourcePath = normalizedPath(launchSourceOverride) ?? path
-        if FileManager.default.fileExists(atPath: sourcePath, isDirectory: &isDirectory) {
-            if isDirectory.boolValue {
-                args.append(contentsOf: ["--path", sourcePath])
-            } else {
-                args.append(contentsOf: ["--main-pack", sourcePath])
-            }
-        } else if launchSourceOverride != nil {
-            Logger.App.error("GodotApp.start source override does not exist: \(sourcePath, privacy: .public)")
+        guard let startupSource = validateStartupSource(sourcePath: sourcePath, scene: scene) else {
+            return false
+        }
+
+        var args: [String] = []
+        switch startupSource {
+        case .directory(let directory):
+            args.append(contentsOf: ["--path", directory])
+        case .packFile(let packFile):
+            args.append(contentsOf: ["--main-pack", packFile])
         }
         args.append(contentsOf: [
             "--rendering-driver", renderingDriver,
@@ -192,7 +198,7 @@ public class GodotApp: ObservableObject {
         args.append(contentsOf: [
             "--display-driver", self.displayDriver
         ])
-        if let scene = normalizedScene(launchSceneOverride) {
+        if let scene {
             args.append(scene)
         }
         args.append(contentsOf: extraArgs)
@@ -434,6 +440,70 @@ public class GodotApp: ObservableObject {
     private func normalizedScene(_ scene: String?) -> String? {
         guard let scene, !scene.isEmpty else { return nil }
         return scene
+    }
+
+    private func validateStartupSource(sourcePath: String, scene: String?) -> StartupSource? {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: sourcePath, isDirectory: &isDirectory) else {
+            Logger.App.error("GodotApp.start failed: source path does not exist: \(sourcePath, privacy: .public)")
+            return nil
+        }
+
+        if isDirectory.boolValue {
+            let projectFile = sourcePath + "/project.godot"
+            guard FileManager.default.fileExists(atPath: projectFile) else {
+                Logger.App.error("GodotApp.start failed: missing project.godot in source directory: \(sourcePath, privacy: .public)")
+                return nil
+            }
+
+            let cacheFile = sourcePath + "/.godot/global_script_class_cache.cfg"
+            if !FileManager.default.fileExists(atPath: cacheFile) {
+                Logger.App.warning("GodotApp.start warning: missing global script cache at \(cacheFile, privacy: .public). Godot will need to rebuild cache.")
+            }
+
+            if let scene, let scenePath = resolveScenePathForValidation(scene: scene, sourceDirectory: sourcePath) {
+                guard FileManager.default.fileExists(atPath: scenePath) else {
+                    Logger.App.error("GodotApp.start failed: scene does not exist: \(scenePath, privacy: .public)")
+                    return nil
+                }
+            }
+
+            return .directory(sourcePath)
+        }
+
+        if let scene {
+            if scene.hasPrefix("/") {
+                if !FileManager.default.fileExists(atPath: scene) {
+                    Logger.App.error("GodotApp.start failed: absolute scene path does not exist: \(scene, privacy: .public)")
+                    return nil
+                }
+            } else if scene.hasPrefix("file://"), let scenePath = normalizedPath(scene), !FileManager.default.fileExists(atPath: scenePath) {
+                Logger.App.error("GodotApp.start failed: file scene path does not exist: \(scenePath, privacy: .public)")
+                return nil
+            } else if !scene.hasPrefix("res://") && !scene.contains("://") {
+                Logger.App.warning("GodotApp.start warning: scene '\(scene, privacy: .public)' is relative while launching from a pack file; validation is limited.")
+            }
+        }
+
+        return .packFile(sourcePath)
+    }
+
+    private func resolveScenePathForValidation(scene: String, sourceDirectory: String) -> String? {
+        if scene.hasPrefix("res://") {
+            let suffix = String(scene.dropFirst("res://".count))
+            return sourceDirectory + "/" + suffix
+        }
+        if scene.hasPrefix("file://") {
+            return normalizedPath(scene)
+        }
+        if scene.hasPrefix("/") {
+            return scene
+        }
+        if scene.contains("://") {
+            Logger.App.warning("GodotApp.start warning: skipping filesystem validation for scene URI: \(scene, privacy: .public)")
+            return nil
+        }
+        return sourceDirectory + "/" + scene
     }
 
     #if os(iOS)

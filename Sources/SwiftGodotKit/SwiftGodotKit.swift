@@ -50,7 +50,7 @@ extension GodotInstance {
                 initializeSwiftModule(
                     unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self),
                     unsafeBitCast(libraryPtr, to: OpaquePointer.self),
-                    unsafeBitCast(extensionInit, to: OpaquePointer.self),
+                    extensionInit,
                     initHook: { level in
                         initHookCb?(level)
                     },
