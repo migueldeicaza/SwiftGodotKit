@@ -61,6 +61,7 @@ public class NSGodotAppView: GodotView {
     private var frameTimer: Foundation.Timer? = nil
     private var frameCount: UInt64 = 0
     private var loggedSurfaceBinding = false
+    private var didEmitDisplayServerNotEmbeddedWarning = false
     private var callbackToken: UUID?
     private weak var callbackApp: GodotApp?
 
@@ -68,6 +69,23 @@ public class NSGodotAppView: GodotView {
         if let data = ("[SwiftGodotKit] " + message + "\n").data(using: .utf8) {
             FileHandle.standardError.write(data)
         }
+    }
+
+    private func emitDisplayServerNotEmbeddedWarning(context: String) {
+        guard !didEmitDisplayServerNotEmbeddedWarning else { return }
+        didEmitDisplayServerNotEmbeddedWarning = true
+        let detail = "DisplayServer.shared is not DisplayServerEmbedded (\(context))"
+        logger.error("\(detail, privacy: .public)")
+        print("[SwiftGodotKit] \(detail)")
+        stderrLog(detail)
+        app?.emitRuntimeEvent(
+            .warning(
+                GodotWarningEvent(
+                    code: .displayServerNotEmbedded,
+                    detail: detail
+                )
+            )
+        )
     }
     
     public var app: GodotApp?
@@ -90,8 +108,7 @@ public class NSGodotAppView: GodotView {
                             logger.info("NSGodotAppView.layout created embedded display server")
                             print("[SwiftGodotKit] NSGodotAppView.layout created embedded display server")
                         } else {
-                            logger.error("NSGodotAppView.layout DisplayServer.shared is not embedded")
-                            print("[SwiftGodotKit] NSGodotAppView.layout DisplayServer.shared is not embedded")
+                            emitDisplayServerNotEmbeddedWarning(context: "layout")
                         }
                     }
 
@@ -135,8 +152,7 @@ public class NSGodotAppView: GodotView {
                     print("[SwiftGodotKit] startGodotInstance created embedded display server")
                     stderrLog("startGodotInstance created embedded display server")
                 } else {
-                    print("[SwiftGodotKit] startGodotInstance DisplayServer.shared is not embedded")
-                    stderrLog("startGodotInstance DisplayServer.shared is not embedded")
+                    emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
                 }
             }
             resizeWindow()

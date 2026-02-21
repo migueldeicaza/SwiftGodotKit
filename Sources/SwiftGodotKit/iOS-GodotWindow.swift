@@ -115,7 +115,7 @@ public class UIGodotWindow: UIView {
             return
         }
         let createdWindow = Window()
-        if !attach(window: createdWindow, ownsWindow: true) {
+        if !attach(window: createdWindow, ownsWindow: true, state: .bound) {
             app.queueGodotWindow(self)
         }
     }
@@ -279,6 +279,17 @@ public class UIGodotWindow: UIView {
         guard let namedWindow = findNamedWindow(named: node) else {
             if !didLogMissingNamedWindow {
                 Logger.Window.error("initGodotWindow: could not find window named \(node, privacy: .public)")
+                app.emitRuntimeEvent(
+                    .windowBinding(
+                        GodotWindowBindingEvent(
+                            state: .missingNamedWindow,
+                            nodeName: node,
+                            instanceId: nil,
+                            ownsWindow: false,
+                            platform: "ios"
+                        )
+                    )
+                )
                 didLogMissingNamedWindow = true
             }
             clearBinding(removeOwnedWindow: true)
@@ -289,9 +300,10 @@ public class UIGodotWindow: UIView {
         let namedWindowInstanceId = windowInstanceId(namedWindow)
         let shouldRebind = !inited || !isBoundWindowAlive() || boundWindowInstanceId != namedWindowInstanceId
         guard shouldRebind else { return }
+        let bindingState: GodotWindowBindingEvent.State = (inited && isBoundWindowAlive()) ? .rebound : .bound
 
         clearBinding(removeOwnedWindow: true)
-        _ = attach(window: namedWindow, ownsWindow: false)
+        _ = attach(window: namedWindow, ownsWindow: false, state: bindingState)
     }
 
     private func findNamedWindow(named: String) -> Window? {
@@ -305,7 +317,11 @@ public class UIGodotWindow: UIView {
     }
 
     @discardableResult
-    private func attach(window: Window, ownsWindow: Bool) -> Bool {
+    private func attach(
+        window: Window,
+        ownsWindow: Bool,
+        state: GodotWindowBindingEvent.State
+    ) -> Bool {
         guard let windowLayer else {
             Logger.Window.error("initGodotWindow: windowLayer was nil")
             return false
@@ -330,6 +346,25 @@ public class UIGodotWindow: UIView {
             window.setNativeSurface(windowNativeSurface)
         } else if !didLogMissingSetNativeSurface {
             Logger.Window.error("attach(window:): Window is missing set_native_surface in this runtime; skipping native surface binding")
+            app?.emitRuntimeEvent(
+                .warning(
+                    GodotWarningEvent(
+                        code: .windowNativeSurfaceUnsupported,
+                        detail: "Window is missing set_native_surface; skipping native surface binding"
+                    )
+                )
+            )
+            app?.emitRuntimeEvent(
+                .windowBinding(
+                    GodotWindowBindingEvent(
+                        state: .nativeSurfaceUnsupported,
+                        nodeName: node,
+                        instanceId: windowInstanceId(window),
+                        ownsWindow: ownsWindow,
+                        platform: "ios"
+                    )
+                )
+            )
             didLogMissingSetNativeSurface = true
         }
 
@@ -342,10 +377,24 @@ public class UIGodotWindow: UIView {
         if let callback {
             callback(window)
         }
+        app?.emitRuntimeEvent(
+            .windowBinding(
+                GodotWindowBindingEvent(
+                    state: state,
+                    nodeName: node,
+                    instanceId: boundWindowInstanceId,
+                    ownsWindow: ownsWindow,
+                    platform: "ios"
+                )
+            )
+        )
         return true
     }
 
     private func clearBinding(removeOwnedWindow: Bool) {
+        let detachedInstanceId = boundWindowInstanceId
+        let detachedOwnsWindow = ownsSubwindow
+        let hadBinding = inited || detachedInstanceId != nil
         if removeOwnedWindow, ownsSubwindow, let subwindow, isBoundWindowAlive() {
             subwindow.getParent()?.removeChild(node: subwindow)
         }
@@ -353,6 +402,19 @@ public class UIGodotWindow: UIView {
         subwindow = nil
         boundWindowInstanceId = nil
         ownsSubwindow = false
+        if hadBinding {
+            app?.emitRuntimeEvent(
+                .windowBinding(
+                    GodotWindowBindingEvent(
+                        state: .detached,
+                        nodeName: node,
+                        instanceId: detachedInstanceId,
+                        ownsWindow: detachedOwnsWindow,
+                        platform: "ios"
+                    )
+                )
+            )
+        }
     }
 
     private func windowInstanceId(_ window: Window) -> Int64 {

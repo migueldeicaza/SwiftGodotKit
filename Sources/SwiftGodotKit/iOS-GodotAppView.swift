@@ -68,6 +68,7 @@ public class UIGodotAppView: UIView {
     private var embedded: DisplayServerEmbedded?
     private var callbackToken: UUID?
     private weak var callbackApp: GodotApp?
+    private var didEmitDisplayServerNotEmbeddedWarning = false
     
     public var app: GodotApp?
     public var source: String?
@@ -122,9 +123,15 @@ public class UIGodotAppView: UIView {
         if let instance = app?.instance {
             if instance.isStarted() {
                 if embedded == nil {
-                    embedded = DisplayServer.shared as? DisplayServerEmbedded
+                    if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                        embedded = displayServer
+                    } else {
+                        emitDisplayServerNotEmbeddedWarning(context: "layoutSubviews")
+                    }
                 }
-                resizeWindow()
+                if embedded != nil {
+                    resizeWindow()
+                }
             }
         }
         super.layoutSubviews()
@@ -155,9 +162,15 @@ public class UIGodotAppView: UIView {
                 self.displayLink = displayLink
             }
             if embedded == nil {
-                embedded = DisplayServer.shared as? DisplayServerEmbedded
+                if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                    embedded = displayServer
+                } else {
+                    emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
+                }
             }
-            resizeWindow()
+            if embedded != nil {
+                resizeWindow()
+            }
             app.pollBridgeAndReadiness()
         } else {
             app.queueStart(self)
@@ -344,6 +357,21 @@ public class UIGodotAppView: UIView {
 }
 
 private extension UIGodotAppView {
+    func emitDisplayServerNotEmbeddedWarning(context: String) {
+        guard !didEmitDisplayServerNotEmbeddedWarning else { return }
+        didEmitDisplayServerNotEmbeddedWarning = true
+        let detail = "DisplayServer.shared is not DisplayServerEmbedded (\(context))"
+        Logger.App.error("\(detail, privacy: .public)")
+        app?.emitRuntimeEvent(
+            .warning(
+                GodotWarningEvent(
+                    code: .displayServerNotEmbedded,
+                    detail: detail
+                )
+            )
+        )
+    }
+
     func syncCallbackRegistration() {
         guard let app else { return }
 
