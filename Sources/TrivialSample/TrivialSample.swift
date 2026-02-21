@@ -120,7 +120,15 @@ struct ContentView: View {
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             Text("Hello, world!")
-            GodotAppView()
+            GodotAppView(
+                onReady: { handle in
+                    print("[TrivialSample] GodotAppView onReady root=\(String(describing: handle.getRoot()))")
+                    handle.emitMessage("{\"type\":\"host_ready\"}")
+                },
+                onMessage: { message in
+                    print("[TrivialSample] GodotAppView onMessage \(message)")
+                }
+            )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black.opacity(0.1))
         }
