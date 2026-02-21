@@ -31,7 +31,9 @@ public struct GodotWindow: NSViewRepresentable {
 
 public class NSGodotWindow: GodotView {
     private var subwindow: SwiftGodot.Window?
+    private var boundWindowInstanceId: Int64?
     private var ownsSubwindow = false
+    private var didLogMissingNamedWindow = false
     
     var callback: ((SwiftGodot.Window)->())?
     var node: String?
@@ -39,50 +41,46 @@ public class NSGodotWindow: GodotView {
     var inited = false
     
     public override var windowId: Int {
-        Int(subwindow?.getWindowId() ?? Int32(DisplayServer.invalidWindowId))
+        guard inited, isBoundWindowAlive(), let subwindow else {
+            return Int(Int32(DisplayServer.invalidWindowId))
+        }
+        return Int(subwindow.getWindowId())
     }
     
     func initGodotWindow() {
         guard app?.displayDriver == "embedded" else {
             return
         }
-        if (!inited) {
-            if let instance = app?.instance {
-                if !instance.isStarted() {
-                    return
-                }
-                if let node {
-                    guard let existingWindow = (Engine.getMainLoop() as? SceneTree)?.root?.findChild(pattern: node) as? SwiftGodot.Window else {
-                        logger.error("initGodotWindow: missing window named \(node, privacy: .public)")
-                        return
-                    }
-                    subwindow = existingWindow
-                    ownsSubwindow = false
-                } else {
-                    subwindow = Window()
-                    ownsSubwindow = true
-                }
-                guard let renderingLayer else {
-                    logger.critical("GodotWindow.renderingLayer was not initialized")
-                    return
-                }
-                
-                if let subwindow {
-                    if let callback {
-                        callback(subwindow)
-                    }
-                    let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
-                    subwindow.setNativeSurface(windowNativeSurface)
-                    if ownsSubwindow, let root = (Engine.getMainLoop() as? SceneTree)?.root {
-                        root.addChild(node: subwindow)
-                    } else if ownsSubwindow {
-                        logger.error("initGodotWindow: could not turn Engine.mainLoop into a sceneTree")
-                    }
-                    inited = true
-                }
-            } else if let app {
-                app.queueGodotWindow (self)
+        guard let app else { return }
+        guard let instance = app.instance else {
+            app.queueGodotWindow(self)
+            return
+        }
+        guard instance.isStarted() else {
+            app.queueGodotWindow(self)
+            return
+        }
+
+        if let node {
+            bindNamedWindow(node: node, app: app)
+            return
+        }
+
+        if inited {
+            if !isBoundWindowAlive() {
+                clearBinding(removeOwnedWindow: false)
+                app.queueGodotWindow(self)
             }
+            return
+        }
+
+        guard (Engine.getMainLoop() as? SceneTree)?.root != nil else {
+            app.queueGodotWindow(self)
+            return
+        }
+        let createdWindow = SwiftGodot.Window()
+        if !attach(window: createdWindow, ownsWindow: true) {
+            app.queueGodotWindow(self)
         }
     }
     
@@ -91,6 +89,7 @@ public class NSGodotWindow: GodotView {
             super.layout()
             return
         }
+        initGodotWindow()
         renderingLayer?.frame = self.bounds
         if inited {
             if embedded == nil {
@@ -102,13 +101,83 @@ public class NSGodotWindow: GodotView {
     }
     
     public override func removeFromSuperview() {
-        if ownsSubwindow {
-            subwindow?.getParent()?.removeChild(node: subwindow)
+        clearBinding(removeOwnedWindow: true)
+        embedded = nil
+        super.removeFromSuperview()
+    }
+
+    private func bindNamedWindow(node: String, app: GodotApp) {
+        if inited && isBoundWindowAlive() {
+            return
+        }
+
+        guard let namedWindow = findNamedWindow(named: node) else {
+            if !didLogMissingNamedWindow {
+                logger.error("initGodotWindow: missing window named \(node, privacy: .public)")
+                didLogMissingNamedWindow = true
+            }
+            clearBinding(removeOwnedWindow: true)
+            app.queueGodotWindow(self)
+            return
+        }
+
+        clearBinding(removeOwnedWindow: true)
+        _ = attach(window: namedWindow, ownsWindow: false)
+    }
+
+    private func findNamedWindow(named: String) -> SwiftGodot.Window? {
+        (Engine.getMainLoop() as? SceneTree)?.root?.findChild(pattern: named) as? SwiftGodot.Window
+    }
+
+    @discardableResult
+    private func attach(window: SwiftGodot.Window, ownsWindow: Bool) -> Bool {
+        guard let renderingLayer else {
+            logger.critical("GodotWindow.renderingLayer was not initialized")
+            return false
+        }
+
+        if ownsWindow {
+            guard let root = (Engine.getMainLoop() as? SceneTree)?.root else {
+                logger.error("initGodotWindow: could not turn Engine.mainLoop into a sceneTree")
+                return false
+            }
+            if window.getParent() == nil {
+                root.addChild(node: window)
+            }
+        }
+
+        let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
+        window.setNativeSurface(windowNativeSurface)
+
+        subwindow = window
+        ownsSubwindow = ownsWindow
+        boundWindowInstanceId = windowInstanceId(window)
+        inited = true
+        didLogMissingNamedWindow = false
+
+        if let callback {
+            callback(window)
+        }
+        return true
+    }
+
+    private func clearBinding(removeOwnedWindow: Bool) {
+        if removeOwnedWindow, ownsSubwindow, let subwindow, isBoundWindowAlive() {
+            subwindow.getParent()?.removeChild(node: subwindow)
         }
         inited = false
         subwindow = nil
-        embedded = nil
-        super.removeFromSuperview()
+        boundWindowInstanceId = nil
+        ownsSubwindow = false
+    }
+
+    private func windowInstanceId(_ window: SwiftGodot.Window) -> Int64 {
+        Int64(bitPattern: UInt64(window.getInstanceId()))
+    }
+
+    private func isBoundWindowAlive() -> Bool {
+        guard let boundWindowInstanceId else { return false }
+        return GD.isInstanceIdValid(id: boundWindowInstanceId)
     }
 }
 #endif

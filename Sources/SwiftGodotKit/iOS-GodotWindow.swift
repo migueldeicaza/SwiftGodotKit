@@ -42,12 +42,14 @@ public class UIGodotWindow: UIView {
     public var windowLayer: CAMetalLayer?
     private var embedded: DisplayServerEmbedded?
     private var subwindow: SwiftGodot.Window?
+    private var boundWindowInstanceId: Int64?
     
     var callback: ((SwiftGodot.Window)->())?
     var node: String?
     var app: GodotApp?
     var inited = false
     private var ownsSubwindow = false
+    private var didLogMissingNamedWindow = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -83,49 +85,42 @@ public class UIGodotWindow: UIView {
         if windowLayer == nil {
             commonInit()
         }
-        
-        if (!inited) {
-            if let instance = app.instance {
-                if !instance.isStarted() {
-                    app.queueGodotWindow(self)
-                    return
-                }
-                if let node {
-                    guard
-                        let sceneTree = Engine.getMainLoop() as? SceneTree,
-                        let root = sceneTree.root,
-                        let existingWindow = root.findChild(pattern: node) as? Window
-                    else {
-                        Logger.Window.error("initGodotWindow: could not find window named \(node, privacy: .public)")
-                        return
-                    }
-                    subwindow = existingWindow
-                    ownsSubwindow = false
-                } else {
-                    subwindow = Window()
-                    ownsSubwindow = true
-                }
-                if let callback, let subwindow {
-                    callback(subwindow)
-                }
-                guard let windowLayer else {
-                    Logger.Window.error("initGodotWindow: windowLayer was nil")
-                    return
-                }
-                let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()))
-                subwindow?.setNativeSurface(windowNativeSurface)
-                if ownsSubwindow, let sceneTree = Engine.getMainLoop() as? SceneTree, let root = sceneTree.root, let subwindow {
-                    root.addChild(node: subwindow)
-                }
-                inited = true
-            } else {
+
+        guard let instance = app.instance else {
+            app.queueGodotWindow(self)
+            return
+        }
+        guard instance.isStarted() else {
+            app.queueGodotWindow(self)
+            return
+        }
+
+        if let node {
+            bindNamedWindow(node: node, app: app)
+            return
+        }
+
+        if inited {
+            if !isBoundWindowAlive() {
+                clearBinding(removeOwnedWindow: false)
                 app.queueGodotWindow(self)
             }
+            return
+        }
+
+        guard (Engine.getMainLoop() as? SceneTree)?.root != nil else {
+            app.queueGodotWindow(self)
+            return
+        }
+        let createdWindow = Window()
+        if !attach(window: createdWindow, ownsWindow: true) {
+            app.queueGodotWindow(self)
         }
     }
     
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let windowLayer, let app, app.instance != nil else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -142,19 +137,17 @@ public class UIGodotWindow: UIView {
             let tapCount = touch.tapCount
             touchData.append([ "touchId": touchId, "location": location, "tapCount": tapCount ])
         }
-        {
-            let windowId = subwindow?.getWindowId() ?? Int32(DisplayServer.mainWindowId)
-            for touch in touchData {
-                let touchId = touch["touchId"] as! Int
-                let location = touch["location"] as! CGPoint
-                let tapCount = touch["tapCount"] as! Int
-                (DisplayServer.shared as! DisplayServerEmbedded).touchPress(idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: true, doubleClick: tapCount > 1, window: windowId)
-            }
-        }()
+        for touch in touchData {
+            let touchId = touch["touchId"] as! Int
+            let location = touch["location"] as! CGPoint
+            let tapCount = touch["tapCount"] as! Int
+            displayServer.touchPress(idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: true, doubleClick: tapCount > 1, window: windowId)
+        }
     }
     
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let windowLayer, let app, app.instance != nil else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -181,23 +174,21 @@ public class UIGodotWindow: UIView {
             touchData.append([ "touchId": touchId, "location": location, "prevLocation": prevLocation, "alt": alt, "azim": azim, "force": force, "maximumPossibleForce": maximumPossibleForce ])
         }
         
-        {
-            let windowId = subwindow?.getWindowId() ?? Int32(DisplayServer.mainWindowId)
-            for touch in touchData {
-                let touchId = touch["touchId"] as! Int
-                let location = touch["location"] as! CGPoint
-                let prevLocation = touch["prevLocation"] as! CGPoint
-                let alt = touch["alt"] as! CGFloat
-                let azim = touch["azim"] as! CGVector
-                let force = touch["force"] as! CGFloat
-                let maximumPossibleForce = touch["maximumPossibleForce"] as! CGFloat
-                (DisplayServer.shared as! DisplayServerEmbedded).touchDrag(idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
-            }
-        }()
+        for touch in touchData {
+            let touchId = touch["touchId"] as! Int
+            let location = touch["location"] as! CGPoint
+            let prevLocation = touch["prevLocation"] as! CGPoint
+            let alt = touch["alt"] as! CGFloat
+            let azim = touch["azim"] as! CGVector
+            let force = touch["force"] as! CGFloat
+            let maximumPossibleForce = touch["maximumPossibleForce"] as! CGFloat
+            displayServer.touchDrag(idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
+        }
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let windowLayer, let app, app.instance != nil else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -215,18 +206,16 @@ public class UIGodotWindow: UIView {
             touchData.append([ "touchId": touchId, "location": location ])
         }
         
-        {
-            let windowId = subwindow?.getWindowId() ?? Int32(DisplayServer.mainWindowId)
-            for touch in touchData {
-                let touchId = touch["touchId"] as! Int
-                let location = touch["location"] as! CGPoint
-                (DisplayServer.shared as! DisplayServerEmbedded).touchPress(idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: false, doubleClick: false, window: windowId)
-            }
-        }()
+        for touch in touchData {
+            let touchId = touch["touchId"] as! Int
+            let location = touch["location"] as! CGPoint
+            displayServer.touchPress(idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: false, doubleClick: false, window: windowId)
+        }
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let app, app.instance != nil else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
 
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -238,23 +227,21 @@ public class UIGodotWindow: UIView {
             touchData.append([ "touchId": touchId ])
         }
         
-        {
-            let windowId = subwindow?.getWindowId() ?? Int32(DisplayServer.mainWindowId)
-            for touch in touchData {
-                let touchId = touch["touchId"] as! Int
-                (DisplayServer.shared as! DisplayServerEmbedded).touchesCanceled(idx: Int32(touchId), window: windowId)
-            }
-        }()
+        for touch in touchData {
+            let touchId = touch["touchId"] as! Int
+            displayServer.touchesCanceled(idx: Int32(touchId), window: windowId)
+        }
     }
     
     func resizeWindow() {
-        if let embedded, let subwindow {
+        if let embedded, let subwindow, inited, isBoundWindowAlive() {
             embedded.resizeWindow(size: Vector2i(x: Int32(self.bounds.size.width * self.contentScaleFactor), y: Int32(self.bounds.size.height * self.contentScaleFactor)), id: subwindow.getWindowId())
         }
     }
     
     public override func layoutSubviews() {
         self.windowLayer?.frame = self.bounds
+        initGodotWindow()
         if inited {
             if embedded == nil {
                 embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
@@ -275,13 +262,98 @@ public class UIGodotWindow: UIView {
     }
     
     public override func removeFromSuperview() {
-        if ownsSubwindow, let subwindow {
+        clearBinding(removeOwnedWindow: true)
+        embedded = nil
+        super.removeFromSuperview()
+    }
+
+    private func targetWindowIdForInput() -> Int32? {
+        initGodotWindow()
+        guard inited, isBoundWindowAlive(), let subwindow else { return nil }
+        return subwindow.getWindowId()
+    }
+
+    private func bindNamedWindow(node: String, app: GodotApp) {
+        if inited && isBoundWindowAlive() {
+            return
+        }
+
+        guard let namedWindow = findNamedWindow(named: node) else {
+            if !didLogMissingNamedWindow {
+                Logger.Window.error("initGodotWindow: could not find window named \(node, privacy: .public)")
+                didLogMissingNamedWindow = true
+            }
+            clearBinding(removeOwnedWindow: true)
+            app.queueGodotWindow(self)
+            return
+        }
+
+        clearBinding(removeOwnedWindow: true)
+        _ = attach(window: namedWindow, ownsWindow: false)
+    }
+
+    private func findNamedWindow(named: String) -> Window? {
+        guard
+            let sceneTree = Engine.getMainLoop() as? SceneTree,
+            let root = sceneTree.root
+        else {
+            return nil
+        }
+        return root.findChild(pattern: named) as? Window
+    }
+
+    @discardableResult
+    private func attach(window: Window, ownsWindow: Bool) -> Bool {
+        guard let windowLayer else {
+            Logger.Window.error("initGodotWindow: windowLayer was nil")
+            return false
+        }
+
+        if ownsWindow {
+            guard
+                let sceneTree = Engine.getMainLoop() as? SceneTree,
+                let root = sceneTree.root
+            else {
+                Logger.Window.error("initGodotWindow: could not access scene tree root for new subwindow")
+                return false
+            }
+            if window.getParent() == nil {
+                root.addChild(node: window)
+            }
+        }
+
+        let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()))
+        window.setNativeSurface(windowNativeSurface)
+
+        subwindow = window
+        ownsSubwindow = ownsWindow
+        boundWindowInstanceId = windowInstanceId(window)
+        inited = true
+        didLogMissingNamedWindow = false
+
+        if let callback {
+            callback(window)
+        }
+        return true
+    }
+
+    private func clearBinding(removeOwnedWindow: Bool) {
+        if removeOwnedWindow, ownsSubwindow, let subwindow, isBoundWindowAlive() {
             subwindow.getParent()?.removeChild(node: subwindow)
         }
         inited = false
         subwindow = nil
-        embedded = nil
-        super.removeFromSuperview()
+        boundWindowInstanceId = nil
+        ownsSubwindow = false
+    }
+
+    private func windowInstanceId(_ window: Window) -> Int64 {
+        Int64(bitPattern: UInt64(window.getInstanceId()))
+    }
+
+    private func isBoundWindowAlive() -> Bool {
+        guard let boundWindowInstanceId else { return false }
+        return GD.isInstanceIdValid(id: boundWindowInstanceId)
     }
 }
 #endif
