@@ -50,6 +50,7 @@ public class UIGodotWindow: UIView {
     var inited = false
     private var ownsSubwindow = false
     private var didLogMissingNamedWindow = false
+    private var didLogMissingSetNativeSurface = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -97,6 +98,7 @@ public class UIGodotWindow: UIView {
 
         if let node {
             bindNamedWindow(node: node, app: app)
+            app.queueGodotWindow(self)
             return
         }
 
@@ -274,10 +276,6 @@ public class UIGodotWindow: UIView {
     }
 
     private func bindNamedWindow(node: String, app: GodotApp) {
-        if inited && isBoundWindowAlive() {
-            return
-        }
-
         guard let namedWindow = findNamedWindow(named: node) else {
             if !didLogMissingNamedWindow {
                 Logger.Window.error("initGodotWindow: could not find window named \(node, privacy: .public)")
@@ -287,6 +285,10 @@ public class UIGodotWindow: UIView {
             app.queueGodotWindow(self)
             return
         }
+
+        let namedWindowInstanceId = windowInstanceId(namedWindow)
+        let shouldRebind = !inited || !isBoundWindowAlive() || boundWindowInstanceId != namedWindowInstanceId
+        guard shouldRebind else { return }
 
         clearBinding(removeOwnedWindow: true)
         _ = attach(window: namedWindow, ownsWindow: false)
@@ -299,7 +301,7 @@ public class UIGodotWindow: UIView {
         else {
             return nil
         }
-        return root.findChild(pattern: named) as? Window
+        return root.findChild(pattern: named, recursive: true, owned: false) as? Window
     }
 
     @discardableResult
@@ -322,8 +324,14 @@ public class UIGodotWindow: UIView {
             }
         }
 
-        let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()))
-        window.setNativeSurface(windowNativeSurface)
+        let setNativeSurfaceMethod = StringName("set_native_surface")
+        if window.hasMethod(setNativeSurfaceMethod) {
+            let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()))
+            window.setNativeSurface(windowNativeSurface)
+        } else if !didLogMissingSetNativeSurface {
+            Logger.Window.error("attach(window:): Window is missing set_native_surface in this runtime; skipping native surface binding")
+            didLogMissingSetNativeSurface = true
+        }
 
         subwindow = window
         ownsSubwindow = ownsWindow
