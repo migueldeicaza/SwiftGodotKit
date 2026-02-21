@@ -63,8 +63,8 @@ extension GodotInstance {
                 return 1
             })
         })
-        if instance != nil {
-            return GodotInstance(nativeHandle: instance!)
+        if let instance {
+            return getOrInitSwiftObject(nativeHandle: instance, ownsRef: false)
         }
         return nil
     }
