@@ -7,9 +7,57 @@ import SwiftUI
 import SwiftGodot
 import Foundation
 import OSLog
+#if canImport(Dispatch)
+import Dispatch
+#endif
 #if os(iOS)
 import UIKit
 #endif
+
+public final class GodotAppViewHandle {
+    private weak var app: GodotApp?
+
+    internal init(app: GodotApp) {
+        self.app = app
+    }
+
+    public func pause() {
+        app?.pause()
+    }
+
+    public func resume() {
+        app?.resume()
+    }
+
+    public func getRoot() -> Node? {
+        guard let sceneTree = Engine.getMainLoop() as? SceneTree else { return nil }
+        return sceneTree.root
+    }
+
+    public func isReady() -> Bool {
+        guard let app, let instance = app.instance, instance.isStarted() else { return false }
+        return getRoot() != nil
+    }
+
+    public func emitMessage(_ message: String) {
+        app?.emitMessage(message)
+    }
+
+    public func startDrawing() {
+        app?.startDrawing()
+    }
+
+    public func stopDrawing() {
+        app?.stopDrawing()
+    }
+}
+
+private struct ViewCallback {
+    let handle: GodotAppViewHandle
+    let onReady: ((GodotAppViewHandle) -> Void)?
+    let onMessage: ((String) -> Void)?
+    var didSendReady = false
+}
 
 /// You create a single Godot App per application, this contains your game PCK
 @Observable
@@ -36,6 +84,11 @@ public class GodotApp: ObservableObject {
     /// The Godot instance for this host, if it was successfully created
     @ObservationIgnored public var instance: GodotInstance?
     @ObservationIgnored public private(set) var isPaused = false
+    @ObservationIgnored public private(set) var isDrawing = true
+    @ObservationIgnored private var hostBridge: SwiftGodotHostBridge?
+    @ObservationIgnored private var callbacks: [UUID: ViewCallback] = [:]
+    @ObservationIgnored private var launchSourceOverride: String?
+    @ObservationIgnored private var launchSceneOverride: String?
 
     /// Initializes Godot to render a scene.
     /// - Parameters:
@@ -117,12 +170,15 @@ public class GodotApp: ObservableObject {
         #endif
         var args: [String] = []
         var isDirectory: ObjCBool = false
-        if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory) {
+        let sourcePath = normalizedPath(launchSourceOverride) ?? path
+        if FileManager.default.fileExists(atPath: sourcePath, isDirectory: &isDirectory) {
             if isDirectory.boolValue {
-                args.append(contentsOf: ["--path", path])
+                args.append(contentsOf: ["--path", sourcePath])
             } else {
-                args.append(contentsOf: ["--main-pack", path])
+                args.append(contentsOf: ["--main-pack", sourcePath])
             }
+        } else if launchSourceOverride != nil {
+            Logger.App.error("GodotApp.start source override does not exist: \(sourcePath, privacy: .public)")
         }
         args.append(contentsOf: [
             "--rendering-driver", renderingDriver,
@@ -136,9 +192,14 @@ public class GodotApp: ObservableObject {
         args.append(contentsOf: [
             "--display-driver", self.displayDriver
         ])
+        if let scene = normalizedScene(launchSceneOverride) {
+            args.append(scene)
+        }
         args.append(contentsOf: extraArgs)
         Logger.App.info("GodotApp.start path=\(self.path, privacy: .public)")
         Logger.App.info("GodotApp.start args=\(args.joined(separator: " "), privacy: .public)")
+
+        ensureHostBridgeTypeRegistration()
         
         instance = GodotInstance.create(args: args)
         guard let instance else {
@@ -153,6 +214,7 @@ public class GodotApp: ObservableObject {
 #endif
 
         startPending()
+        pollBridgeAndReadiness()
         
         return true
     }
@@ -162,7 +224,9 @@ public class GodotApp: ObservableObject {
         Logger.App.info("GodotApp.stop destroying GodotInstance")
         GodotInstance.destroy(instance: instance)
         self.instance = nil
+        self.hostBridge = nil
         isPaused = false
+        isDrawing = true
     }
 
     public func pause() {
@@ -181,17 +245,35 @@ public class GodotApp: ObservableObject {
         }
     }
 
+    public func startDrawing() {
+        isDrawing = true
+    }
+
+    public func stopDrawing() {
+        isDrawing = false
+    }
+
     public func runOnGodotThread(async: Bool = true, _ block: @escaping () -> Void) {
         guard let instance else {
             Logger.App.error("runOnGodotThread called before Godot instance was created")
             return
         }
-        _ = async
-        // Godot 4.6 embedded mode currently crashes inside SwiftGodot's `execute`
-        // trampoline (`GodotInstance.method_execute`) on focus/lifecycle callbacks.
-        // Run callbacks directly until execute binding compatibility is restored.
-        if instance.isStarted() {
+        guard instance.isStarted() else { return }
+
+        let invoke = { [weak self] in
+            guard let self, let instance = self.instance, instance.isStarted() else { return }
             block()
+        }
+
+        if Thread.isMainThread {
+            invoke()
+            return
+        }
+
+        if async {
+            DispatchQueue.main.async(execute: invoke)
+        } else {
+            DispatchQueue.main.sync(execute: invoke)
         }
     }
 
@@ -230,6 +312,128 @@ public class GodotApp: ObservableObject {
 
     func queueGodotWindow(_ godotWindow: TTGodotWindow) {
         pendingWindow.insert(godotWindow)
+    }
+
+    public func configureLaunch(source: String? = nil, scene: String? = nil) {
+        if instance != nil {
+            let normalizedSource = normalizedPath(source)
+            let normalizedScene = normalizedScene(scene)
+            if launchSourceOverride != normalizedSource || launchSceneOverride != normalizedScene {
+                Logger.App.error("Ignoring source/scene change because GodotApp is already started")
+            }
+            return
+        }
+        launchSourceOverride = normalizedPath(source)
+        launchSceneOverride = normalizedScene(scene)
+    }
+
+    @discardableResult
+    func registerViewCallbacks(
+        handle: GodotAppViewHandle,
+        onReady: ((GodotAppViewHandle) -> Void)?,
+        onMessage: ((String) -> Void)?
+    ) -> UUID {
+        let id = UUID()
+        callbacks[id] = ViewCallback(handle: handle, onReady: onReady, onMessage: onMessage)
+        notifyReadyIfPossible(for: id)
+        return id
+    }
+
+    func unregisterViewCallbacks(id: UUID?) {
+        guard let id else { return }
+        callbacks[id] = nil
+    }
+
+    func pollBridgeAndReadiness() {
+        _ = ensureHostBridgeAttached()
+        notifyReadyIfPossible()
+    }
+
+    public func emitMessage(_ message: String) {
+        runOnGodotThread { [weak self] in
+            guard let self, let bridge = self.ensureHostBridgeAttached() else { return }
+            bridge.messageFromHost.emit(message)
+        }
+    }
+
+    private func notifyReadyIfPossible() {
+        for id in callbacks.keys {
+            notifyReadyIfPossible(for: id)
+        }
+    }
+
+    private func notifyReadyIfPossible(for id: UUID) {
+        guard
+            var callback = callbacks[id],
+            !callback.didSendReady,
+            let instance,
+            instance.isStarted(),
+            let sceneTree = Engine.getMainLoop() as? SceneTree,
+            sceneTree.root != nil
+        else {
+            return
+        }
+        callback.didSendReady = true
+        callbacks[id] = callback
+        if let onReady = callback.onReady {
+            let handle = callback.handle
+            DispatchQueue.main.async {
+                onReady(handle)
+            }
+        }
+    }
+
+    private func broadcastMessage(_ message: String) {
+        let messageCallbacks = callbacks.values.compactMap { $0.onMessage }
+        if messageCallbacks.isEmpty {
+            return
+        }
+        DispatchQueue.main.async {
+            for onMessage in messageCallbacks {
+                onMessage(message)
+            }
+        }
+    }
+
+    private func ensureHostBridgeAttached() -> SwiftGodotHostBridge? {
+        guard let instance, instance.isStarted() else { return nil }
+        guard let sceneTree = Engine.getMainLoop() as? SceneTree, let root = sceneTree.root else {
+            return nil
+        }
+
+        if let hostBridge, hostBridge.getParent() != nil {
+            return hostBridge
+        }
+
+        if let existing = root.findChild(pattern: SwiftGodotHostBridge.nodeName) as? SwiftGodotHostBridge {
+            existing.onMessageToHost = { [weak self] message in
+                self?.broadcastMessage(message)
+            }
+            hostBridge = existing
+            return existing
+        }
+
+        let bridge = SwiftGodotHostBridge()
+        bridge.name = StringName(SwiftGodotHostBridge.nodeName)
+        bridge.onMessageToHost = { [weak self] message in
+            self?.broadcastMessage(message)
+        }
+        root.addChild(node: bridge)
+        hostBridge = bridge
+        return bridge
+    }
+
+    private func normalizedPath(_ source: String?) -> String? {
+        guard let source, !source.isEmpty else { return nil }
+        if source.hasPrefix("file://"), let url = URL(string: source), url.isFileURL {
+            return url.path
+        }
+        return source
+    }
+
+    private func normalizedScene(_ scene: String?) -> String? {
+        guard let scene, !scene.isEmpty else { return nil }
+        return scene
     }
 
     #if os(iOS)

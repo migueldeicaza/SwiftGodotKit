@@ -11,23 +11,49 @@ import SwiftGodot
 public struct GodotAppView: UIViewRepresentable {
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     var view = UIGodotAppView(frame: CGRect.zero)
+    let source: String?
+    let scene: String?
+    let onReady: ((GodotAppViewHandle) -> Void)?
+    let onMessage: ((String) -> Void)?
     
-    public init() { }
+    public init(
+        source: String? = nil,
+        scene: String? = nil,
+        onReady: ((GodotAppViewHandle) -> Void)? = nil,
+        onMessage: ((String) -> Void)? = nil
+    ) {
+        self.source = source
+        self.scene = scene
+        self.onReady = onReady
+        self.onMessage = onMessage
+    }
 
     public func makeUIView(context: Context) -> UIGodotAppView {
         guard let app else {
             Logger.App.error("No GodotApp instance, you must pass it on the environment using \\.godotApp")
             return view
         }
-        
+
+        app.configureLaunch(source: source, scene: scene)
         app.start()
         view.contentScaleFactor = UIScreen.main.scale
         view.isMultipleTouchEnabled = true
         view.app = app
+        view.source = source
+        view.scene = scene
+        view.onReady = onReady
+        view.onMessage = onMessage
+        view.syncCallbackRegistration()
         return view
     }
 
     public func updateUIView(_ uiView: UIGodotAppView, context: Context) {
+        app?.configureLaunch(source: source, scene: scene)
+        uiView.source = source
+        uiView.scene = scene
+        uiView.onReady = onReady
+        uiView.onMessage = onMessage
+        uiView.syncCallbackRegistration()
         uiView.startGodotInstance()
     }
 }
@@ -40,8 +66,14 @@ public class UIGodotAppView: UIView {
     private var displayLink : CADisplayLink? = nil
     
     private var embedded: DisplayServerEmbedded?
+    private var callbackToken: UUID?
+    private weak var callbackApp: GodotApp?
     
     public var app: GodotApp?
+    public var source: String?
+    public var scene: String?
+    public var onReady: ((GodotAppViewHandle) -> Void)?
+    public var onMessage: ((String) -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -99,6 +131,7 @@ public class UIGodotAppView: UIView {
     }
     
     func startGodotInstance() {
+        syncCallbackRegistration()
         guard let app else {
             return
         }
@@ -125,6 +158,7 @@ public class UIGodotAppView: UIView {
                 embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
             }
             resizeWindow()
+            app.pollBridgeAndReadiness()
         } else {
             app.queueStart(self)
         }
@@ -279,6 +313,7 @@ public class UIGodotAppView: UIView {
     public override func removeFromSuperview() {
         displayLink?.invalidate()
         displayLink = nil
+        unregisterCallbacks()
         super.removeFromSuperview()
     }
     
@@ -294,12 +329,47 @@ public class UIGodotAppView: UIView {
 
     @objc
     func iterate() {
-        if let app, app.isPaused {
+        if let app, (app.isPaused || !app.isDrawing) {
             return
         }
         if let instance = app?.instance, instance.isStarted() {
             instance.iteration()
+            app?.pollBridgeAndReadiness()
         }
+    }
+
+    deinit {
+        unregisterCallbacks()
+    }
+}
+
+private extension UIGodotAppView {
+    func syncCallbackRegistration() {
+        guard let app else { return }
+
+        if callbackApp !== app {
+            unregisterCallbacks()
+            callbackApp = app
+        }
+
+        if callbackToken == nil {
+            let token = app.registerViewCallbacks(
+                handle: GodotAppViewHandle(app: app),
+                onReady: { [weak self] handle in
+                    self?.onReady?(handle)
+                },
+                onMessage: { [weak self] message in
+                    self?.onMessage?(message)
+                }
+            )
+            callbackToken = token
+        }
+    }
+
+    func unregisterCallbacks() {
+        callbackApp?.unregisterViewCallbacks(id: callbackToken)
+        callbackToken = nil
+        callbackApp = nil
     }
 }
 #endif

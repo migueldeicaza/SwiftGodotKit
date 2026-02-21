@@ -10,8 +10,21 @@ import SwiftGodot
 public struct GodotAppView: NSViewRepresentable {
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     var view = NSGodotAppView(frame: CGRect.zero)
+    let source: String?
+    let scene: String?
+    let onReady: ((GodotAppViewHandle) -> Void)?
+    let onMessage: ((String) -> Void)?
 
-    public init () {
+    public init(
+        source: String? = nil,
+        scene: String? = nil,
+        onReady: ((GodotAppViewHandle) -> Void)? = nil,
+        onMessage: ((String) -> Void)? = nil
+    ) {
+        self.source = source
+        self.scene = scene
+        self.onReady = onReady
+        self.onMessage = onMessage
     }
 
     public func makeNSView(context: Context) -> NSGodotAppView {
@@ -19,11 +32,23 @@ public struct GodotAppView: NSViewRepresentable {
             Logger.App.error("No GodotApp instance, you must pass it on the environment using \\.godotApp")
             return view
         }
+        app.configureLaunch(source: source, scene: scene)
         view.app = app
+        view.source = source
+        view.scene = scene
+        view.onReady = onReady
+        view.onMessage = onMessage
+        view.syncCallbackRegistration()
         return view
     }
 
     public func updateNSView(_ nsView: NSGodotAppView, context: Context) {
+        app?.configureLaunch(source: source, scene: scene)
+        nsView.source = source
+        nsView.scene = scene
+        nsView.onReady = onReady
+        nsView.onMessage = onMessage
+        nsView.syncCallbackRegistration()
         nsView.startGodotInstance()
     }
 }
@@ -36,6 +61,8 @@ public class NSGodotAppView: GodotView {
     private var frameTimer: Foundation.Timer? = nil
     private var frameCount: UInt64 = 0
     private var loggedSurfaceBinding = false
+    private var callbackToken: UUID?
+    private weak var callbackApp: GodotApp?
 
     private func stderrLog(_ message: String) {
         if let data = ("[SwiftGodotKit] " + message + "\n").data(using: .utf8) {
@@ -44,6 +71,10 @@ public class NSGodotAppView: GodotView {
     }
     
     public var app: GodotApp?
+    public var source: String?
+    public var scene: String?
+    public var onReady: ((GodotAppViewHandle) -> Void)?
+    public var onMessage: ((String) -> Void)?
     
     public override func layout() {
         if let renderingLayer {
@@ -74,6 +105,7 @@ public class NSGodotAppView: GodotView {
     }
 
     func startGodotInstance() {
+        syncCallbackRegistration()
         if let app, let instance = app.instance {
             if app.displayDriver == "embedded" {
                 guard let renderingLayer else {
@@ -108,6 +140,7 @@ public class NSGodotAppView: GodotView {
                 }
             }
             resizeWindow()
+            app.pollBridgeAndReadiness()
             if link == nil {
                 let link = displayLink(target: self, selector: #selector(iterate(_:)))
                 link.add(to: .main, forMode: RunLoop.Mode.common)
@@ -137,6 +170,7 @@ public class NSGodotAppView: GodotView {
             frameTimer?.invalidate()
             frameTimer = nil
             frameCount = 0
+            unregisterCallbacks()
         }
     }
     public override func viewDidMoveToWindow() {
@@ -154,11 +188,12 @@ public class NSGodotAppView: GodotView {
     }
 
     private func iterateFrame() {
-        if let app, app.isPaused {
+        if let app, (app.isPaused || !app.isDrawing) {
             return
         }
         if let instance = app?.instance, instance.isStarted() {
             _ = instance.iteration()
+            app?.pollBridgeAndReadiness()
             frameCount += 1
             if frameCount == 1 || frameCount % 300 == 0 {
                 logger.info("NSGodotAppView.iterate frame=\(self.frameCount)")
@@ -167,8 +202,39 @@ public class NSGodotAppView: GodotView {
             }
         }
     }
+
+    deinit {
+        unregisterCallbacks()
+    }
 }
 
 private extension NSGodotAppView {
+    func syncCallbackRegistration() {
+        guard let app else { return }
+
+        if callbackApp !== app {
+            unregisterCallbacks()
+            callbackApp = app
+        }
+
+        if callbackToken == nil {
+            let token = app.registerViewCallbacks(
+                handle: GodotAppViewHandle(app: app),
+                onReady: { [weak self] handle in
+                    self?.onReady?(handle)
+                },
+                onMessage: { [weak self] message in
+                    self?.onMessage?(message)
+                }
+            )
+            callbackToken = token
+        }
+    }
+
+    func unregisterCallbacks() {
+        callbackApp?.unregisterViewCallbacks(id: callbackToken)
+        callbackToken = nil
+        callbackApp = nil
+    }
 }
 #endif
