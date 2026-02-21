@@ -64,10 +64,6 @@ private struct ViewCallback {
 /// You create a single Godot App per application, this contains your game PCK
 @Observable
 public class GodotApp: ObservableObject {
-    private enum BridgeRouting {
-        static let viewIdKey = "__swiftgodotkit_view_id"
-    }
-
     let path: String
     let renderingDriver: String
     let renderingMethod: String
@@ -373,7 +369,7 @@ public class GodotApp: ObservableObject {
             if let viewId {
                 payload[BridgeRouting.viewIdKey] = Variant(viewId)
             }
-            bridge.messageFromHost.emit(payload)
+            bridge.receiveMessageFromHost(message: payload)
         }
     }
 
@@ -405,7 +401,7 @@ public class GodotApp: ObservableObject {
     }
 
     private func broadcastMessage(_ message: VariantDictionary) {
-        let targetViewId = routedViewId(from: message)
+        let targetViewId = BridgeRouting.routedViewId(from: message)
         let messageCallbacks = callbacks.values.compactMap { callback -> ((VariantDictionary) -> Void)? in
             guard targetViewId == nil || callback.viewId == targetViewId else {
                 return nil
@@ -419,16 +415,6 @@ public class GodotApp: ObservableObject {
                 onMessage(message)
             }
         }
-    }
-
-    private func routedViewId(from message: VariantDictionary) -> Int64? {
-        if let value = Int64(message[BridgeRouting.viewIdKey]) {
-            return value
-        }
-        if let text = String(message[BridgeRouting.viewIdKey]), let value = Int64(text) {
-            return value
-        }
-        return nil
     }
 
     private func ensureHostBridgeAttached() -> SwiftGodotHostBridge? {
