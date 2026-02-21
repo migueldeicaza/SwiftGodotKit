@@ -158,10 +158,7 @@ public class GodotApp: ObservableObject {
         }
         pendingLayout.removeAll()
 
-        for window in pendingWindow {
-            window.initGodotWindow()
-        }
-        pendingWindow.removeAll()   
+        drainPendingWindows()
     }
 
     @discardableResult
@@ -358,8 +355,18 @@ public class GodotApp: ObservableObject {
     }
 
     func pollBridgeAndReadiness() {
+        drainPendingWindows()
         _ = ensureHostBridgeAttached()
         notifyReadyIfPossible()
+    }
+
+    private func drainPendingWindows() {
+        guard !pendingWindow.isEmpty else { return }
+        let windows = pendingWindow
+        pendingWindow.removeAll()
+        for window in windows {
+            window.initGodotWindow()
+        }
     }
 
     public func emitMessage(_ message: VariantDictionary, from viewId: Int64? = nil) {
