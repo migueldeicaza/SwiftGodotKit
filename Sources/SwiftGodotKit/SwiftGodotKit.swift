@@ -11,8 +11,8 @@ import QuartzCore
 @_implementationOnly import GDExtension
 import os
 
-public var initHookCb: ((GDExtension.InitializationLevel) -> ())?
-public var deinitHookCb: ((GDExtension.InitializationLevel) -> ())?
+public var initHookCb: ((ExtensionInitializationLevel) -> ())?
+public var deinitHookCb: ((ExtensionInitializationLevel) -> ())?
 
 let logger = Logger(subsystem: "io.github.migueldeicaza.swiftgodotkit", category: "general")
 
@@ -51,7 +51,7 @@ extension GodotInstance {
                 initializeSwiftModule(
                     unsafeBitCast(godotGetProcAddr, to: OpaquePointer.self),
                     unsafeBitCast(libraryPtr, to: OpaquePointer.self),
-                    unsafeBitCast(extensionInit, to: OpaquePointer.self),
+                    extensionInit,
                     initHook: { level in
                         initHookCb?(level)
                     },
