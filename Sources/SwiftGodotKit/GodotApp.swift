@@ -92,6 +92,8 @@ public class GodotApp: ObservableObject {
     @ObservationIgnored private var launchSourceOverride: String?
     @ObservationIgnored private var launchSceneOverride: String?
     @ObservationIgnored private var nextViewId: Int64 = 1
+    @ObservationIgnored private var lifecycleHasFocus = true
+    @ObservationIgnored private var lifecycleIsPaused = false
 
     private enum StartupSource {
         case directory(String)
@@ -129,6 +131,20 @@ public class GodotApp: ObservableObject {
 
         #if os(iOS)
         registerLifecycleObservers()
+        switch UIApplication.shared.applicationState {
+        case .active:
+            lifecycleHasFocus = true
+            lifecycleIsPaused = false
+        case .background:
+            lifecycleHasFocus = false
+            lifecycleIsPaused = true
+        case .inactive:
+            lifecycleHasFocus = false
+            lifecycleIsPaused = false
+        @unknown default:
+            lifecycleHasFocus = false
+            lifecycleIsPaused = false
+        }
         #endif
     }
 
@@ -291,8 +307,7 @@ public class GodotApp: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.instance?.focusIn()
-            self?.resume()
+            self?.applicationDidBecomeActive()
         }
 
         let willResignActive = center.addObserver(
@@ -300,13 +315,72 @@ public class GodotApp: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.instance?.focusOut()
-            self?.pause()
+            self?.applicationDidResignActive()
         }
 
-        lifecycleObservers = [didBecomeActive, willResignActive]
+        let didEnterBackground = center.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applicationDidEnterBackground()
+        }
+
+        let willEnterForeground = center.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applicationWillEnterForeground()
+        }
+
+        lifecycleObservers = [didBecomeActive, willResignActive, didEnterBackground, willEnterForeground]
     }
     #endif
+
+    func applicationDidBecomeActive() {
+        instance?.focusIn()
+        resume()
+        setApplicationFocus(true)
+    }
+
+    func applicationDidResignActive() {
+        instance?.focusOut()
+        pause()
+        setApplicationFocus(false)
+    }
+
+    #if os(iOS)
+    func applicationDidEnterBackground() {
+        setApplicationPaused(true)
+    }
+
+    func applicationWillEnterForeground() {
+        setApplicationPaused(false)
+    }
+    #endif
+
+    private func setApplicationFocus(_ focused: Bool) {
+        guard lifecycleHasFocus != focused else { return }
+        lifecycleHasFocus = focused
+        let notification = Int32(focused ? MainLoop.notificationApplicationFocusIn : MainLoop.notificationApplicationFocusOut)
+        postMainLoopNotification(notification, label: focused ? "focus_in" : "focus_out")
+    }
+
+    private func setApplicationPaused(_ paused: Bool) {
+        guard lifecycleIsPaused != paused else { return }
+        lifecycleIsPaused = paused
+        let notification = Int32(paused ? MainLoop.notificationApplicationPaused : MainLoop.notificationApplicationResumed)
+        postMainLoopNotification(notification, label: paused ? "paused" : "resumed")
+    }
+
+    private func postMainLoopNotification(_ notification: Int32, label: String) {
+        guard let instance, instance.isStarted() else { return }
+        runOnGodotThread {
+            Engine.getMainLoop()?.notification(what: notification)
+            Logger.App.debug("MainLoop notification \(label, privacy: .public) (\(notification))")
+        }
+    }
 
     func queueStart(_ godotAppView: TTGodotAppView) {
         pendingStart.insert(godotAppView)
