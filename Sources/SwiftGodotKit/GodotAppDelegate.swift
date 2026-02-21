@@ -11,12 +11,16 @@ import AppKit
 import SwiftGodot
 
 open class GodotAppDelegate: NSObject, NSApplicationDelegate {
+    weak var app: GodotApp?
+
     public func applicationDidBecomeActive(_ aNotification: Notification) {
-        //Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusIn))
+        app?.instance?.focusIn()
+        app?.resume()
     }
     
     public func applicationDidResignActive(_ aNotification: Notification) {
-        //Engine.getMainLoop()?.notification(what: Int32(MainLoop.notificationApplicationFocusOut))
+        app?.instance?.focusOut()
+        app?.pause()
     }
 }
 

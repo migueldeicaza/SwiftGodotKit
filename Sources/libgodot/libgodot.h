@@ -28,45 +28,56 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LIBGODOT_H
-#define LIBGODOT_H
+#pragma once
 
-#define LIBRARY_ENABLED 1
-#if defined(LIBRARY_ENABLED)
-
-#if defined(WINDOWS_ENABLED) | defined(UWP_ENABLED)
-#define LIBGODOT_API __declspec(dllexport)
-#elif defined(ANDROID_ENABLED)
-#include <jni.h>
-#define LIBGODOT_API JNIEXPORT
-#else
-#define LIBGODOT_API
-#endif
-
-#include "gdextension_interface.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void libgodot_init_resource();
+// Keep libgodot's C bridge types namespaced to avoid clashes with the
+// GDExtension module that SwiftGodot imports.
+typedef void *LGDExtensionObjectPtr;
+typedef uint8_t LGDExtensionBool;
+typedef void (*LGDExtensionInterfaceFunctionPtr)(void);
+typedef LGDExtensionInterfaceFunctionPtr (*LGDExtensionInterfaceGetProcAddress)(const char *p_function_name);
+typedef void *LGDExtensionClassLibraryPtr;
+typedef struct LGDExtensionInitialization LGDExtensionInitialization;
+typedef LGDExtensionBool (*LGDExtensionInitializationFunction)(LGDExtensionInterfaceGetProcAddress p_get_proc_address, LGDExtensionClassLibraryPtr p_library, LGDExtensionInitialization *r_initialization);
 
-void libgodot_scene_load(void *scene);
+// Export macros for DLL visibility
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#define LIBGODOT_API __declspec(dllexport)
+#elif defined(__GNUC__) || defined(__clang__)
+#define LIBGODOT_API __attribute__((visibility("default")))
+#endif // if defined(_MSC_VER)
 
-int libgodot_is_scene_loadable();
+/**
+ * @name libgodot_create_godot_instance
+ * @since 4.6
+ *
+ * Creates a new Godot instance.
+ *
+ * @param p_argc The number of command line arguments.
+ * @param p_argv The C-style array of command line arguments.
+ * @param p_init_func GDExtension initialization function of the host application.
+ *
+ * @return A pointer to created \ref GodotInstance GDExtension object or nullptr if there was an error.
+ */
+LIBGODOT_API LGDExtensionObjectPtr libgodot_create_godot_instance(int p_argc, char *p_argv[], LGDExtensionInitializationFunction p_init_func);
 
-void *libgodot_sharp_main_init();
-
-LIBGODOT_API void libgodot_mono_bind(void *sharp_main_init, void (*scene_function_bind)(void *));
-
-LIBGODOT_API void libgodot_gdextension_bind(GDExtensionInitializationFunction initialization_bind, void (*scene_function_bind)(void *));
-
-LIBGODOT_API int godot_main(int argc, char *argv[]);
+/**
+ * @name libgodot_destroy_godot_instance
+ * @since 4.6
+ *
+ * Destroys an existing Godot instance.
+ *
+ * @param p_godot_instance The reference to the GodotInstance object to destroy.
+ *
+ */
+LIBGODOT_API void libgodot_destroy_godot_instance(LGDExtensionObjectPtr p_godot_instance);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif
-
-#endif // LIBGODOT_H
