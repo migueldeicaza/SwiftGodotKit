@@ -108,7 +108,7 @@ struct ContentView: View {
     @State var app = GodotApp(
         packFile: "",
         godotPackPath: Bundle.module.bundlePath,
-        displayDriver: ProcessInfo.processInfo.environment["GODOT_DISPLAY_DRIVER"] ?? "macos"
+        displayDriver: ProcessInfo.processInfo.environment["GODOT_DISPLAY_DRIVER"] ?? "embedded"
     )
     #else
     @State var app = GodotApp(packFile: "main.pck", godotPackPath: Bundle.module.bundlePath)
