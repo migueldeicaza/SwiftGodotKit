@@ -14,13 +14,11 @@ open class GodotAppDelegate: NSObject, NSApplicationDelegate {
     weak var app: GodotApp?
 
     public func applicationDidBecomeActive(_ aNotification: Notification) {
-        app?.instance?.focusIn()
-        app?.resume()
+        app?.applicationDidBecomeActive()
     }
     
     public func applicationDidResignActive(_ aNotification: Notification) {
-        app?.instance?.focusOut()
-        app?.pause()
+        app?.applicationDidResignActive()
     }
 }
 
