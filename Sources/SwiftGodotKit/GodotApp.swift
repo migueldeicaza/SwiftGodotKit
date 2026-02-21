@@ -16,6 +16,7 @@ import UIKit
 
 public final class GodotAppViewHandle {
     private weak var app: GodotApp?
+    fileprivate var viewId: Int64?
 
     internal init(app: GodotApp) {
         self.app = app
@@ -40,7 +41,7 @@ public final class GodotAppViewHandle {
     }
 
     public func emitMessage(_ message: VariantDictionary) {
-        app?.emitMessage(message)
+        app?.emitMessage(message, from: viewId)
     }
 
     public func startDrawing() {
@@ -54,6 +55,7 @@ public final class GodotAppViewHandle {
 
 private struct ViewCallback {
     let handle: GodotAppViewHandle
+    let viewId: Int64
     let onReady: ((GodotAppViewHandle) -> Void)?
     let onMessage: ((VariantDictionary) -> Void)?
     var didSendReady = false
@@ -62,6 +64,10 @@ private struct ViewCallback {
 /// You create a single Godot App per application, this contains your game PCK
 @Observable
 public class GodotApp: ObservableObject {
+    private enum BridgeRouting {
+        static let viewIdKey = "__swiftgodotkit_view_id"
+    }
+
     let path: String
     let renderingDriver: String
     let renderingMethod: String
@@ -89,6 +95,7 @@ public class GodotApp: ObservableObject {
     @ObservationIgnored private var callbacks: [UUID: ViewCallback] = [:]
     @ObservationIgnored private var launchSourceOverride: String?
     @ObservationIgnored private var launchSceneOverride: String?
+    @ObservationIgnored private var nextViewId: Int64 = 1
 
     private enum StartupSource {
         case directory(String)
@@ -339,8 +346,12 @@ public class GodotApp: ObservableObject {
         onReady: ((GodotAppViewHandle) -> Void)?,
         onMessage: ((VariantDictionary) -> Void)?
     ) -> UUID {
+        let viewId = nextViewId
+        nextViewId += 1
+        handle.viewId = viewId
+
         let id = UUID()
-        callbacks[id] = ViewCallback(handle: handle, onReady: onReady, onMessage: onMessage)
+        callbacks[id] = ViewCallback(handle: handle, viewId: viewId, onReady: onReady, onMessage: onMessage)
         notifyReadyIfPossible(for: id)
         return id
     }
@@ -355,10 +366,14 @@ public class GodotApp: ObservableObject {
         notifyReadyIfPossible()
     }
 
-    public func emitMessage(_ message: VariantDictionary) {
+    public func emitMessage(_ message: VariantDictionary, from viewId: Int64? = nil) {
         runOnGodotThread { [weak self] in
             guard let self, let bridge = self.ensureHostBridgeAttached() else { return }
-            bridge.messageFromHost.emit(message)
+            let payload = VariantDictionary(from: message)
+            if let viewId {
+                payload[BridgeRouting.viewIdKey] = Variant(viewId)
+            }
+            bridge.messageFromHost.emit(payload)
         }
     }
 
@@ -390,15 +405,30 @@ public class GodotApp: ObservableObject {
     }
 
     private func broadcastMessage(_ message: VariantDictionary) {
-        let messageCallbacks = callbacks.values.compactMap { $0.onMessage }
-        if messageCallbacks.isEmpty {
-            return
+        let targetViewId = routedViewId(from: message)
+        let messageCallbacks = callbacks.values.compactMap { callback -> ((VariantDictionary) -> Void)? in
+            guard targetViewId == nil || callback.viewId == targetViewId else {
+                return nil
+            }
+            return callback.onMessage
         }
+        guard !messageCallbacks.isEmpty else { return }
+
         DispatchQueue.main.async {
             for onMessage in messageCallbacks {
                 onMessage(message)
             }
         }
+    }
+
+    private func routedViewId(from message: VariantDictionary) -> Int64? {
+        if let value = Int64(message[BridgeRouting.viewIdKey]) {
+            return value
+        }
+        if let text = String(message[BridgeRouting.viewIdKey]), let value = Int64(text) {
+            return value
+        }
+        return nil
     }
 
     private func ensureHostBridgeAttached() -> SwiftGodotHostBridge? {
