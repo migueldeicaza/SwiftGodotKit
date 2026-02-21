@@ -14,13 +14,13 @@ public struct GodotAppView: UIViewRepresentable {
     let source: String?
     let scene: String?
     let onReady: ((GodotAppViewHandle) -> Void)?
-    let onMessage: ((String) -> Void)?
+    let onMessage: ((VariantDictionary) -> Void)?
     
     public init(
         source: String? = nil,
         scene: String? = nil,
         onReady: ((GodotAppViewHandle) -> Void)? = nil,
-        onMessage: ((String) -> Void)? = nil
+        onMessage: ((VariantDictionary) -> Void)? = nil
     ) {
         self.source = source
         self.scene = scene
@@ -73,7 +73,7 @@ public class UIGodotAppView: UIView {
     public var source: String?
     public var scene: String?
     public var onReady: ((GodotAppViewHandle) -> Void)?
-    public var onMessage: ((String) -> Void)?
+    public var onMessage: ((VariantDictionary) -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)

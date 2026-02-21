@@ -123,7 +123,9 @@ struct ContentView: View {
             GodotAppView(
                 onReady: { handle in
                     print("[TrivialSample] GodotAppView onReady root=\(String(describing: handle.getRoot()))")
-                    handle.emitMessage("{\"type\":\"host_ready\"}")
+                    let message = VariantDictionary()
+                    message["type"] = Variant("host_ready")
+                    handle.emitMessage(message)
                 },
                 onMessage: { message in
                     print("[TrivialSample] GodotAppView onMessage \(message)")
