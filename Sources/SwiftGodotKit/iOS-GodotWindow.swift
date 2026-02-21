@@ -246,7 +246,7 @@ public class UIGodotWindow: UIView {
         initGodotWindow()
         if inited {
             if embedded == nil {
-                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
+                embedded = DisplayServer.shared as? DisplayServerEmbedded
             }
             resizeWindow()
         }

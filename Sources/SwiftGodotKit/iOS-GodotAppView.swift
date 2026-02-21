@@ -122,7 +122,7 @@ public class UIGodotAppView: UIView {
         if let instance = app?.instance {
             if instance.isStarted() {
                 if embedded == nil {
-                    embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
+                    embedded = DisplayServer.shared as? DisplayServerEmbedded
                 }
                 resizeWindow()
             }
@@ -155,7 +155,7 @@ public class UIGodotAppView: UIView {
                 self.displayLink = displayLink
             }
             if embedded == nil {
-                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
+                embedded = DisplayServer.shared as? DisplayServerEmbedded
             }
             resizeWindow()
             app.pollBridgeAndReadiness()

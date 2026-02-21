@@ -85,13 +85,13 @@ public class NSGodotAppView: GodotView {
             if instance.isStarted() {
                 if app.displayDriver == "embedded" {
                     if embedded == nil {
-                        if let handle = DisplayServer.shared.handle {
-                            embedded = DisplayServerEmbedded(nativeHandle: handle)
+                        if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                            embedded = displayServer
                             logger.info("NSGodotAppView.layout created embedded display server")
                             print("[SwiftGodotKit] NSGodotAppView.layout created embedded display server")
                         } else {
-                            logger.error("NSGodotAppView.layout missing DisplayServer.shared.handle")
-                            print("[SwiftGodotKit] NSGodotAppView.layout missing DisplayServer.shared.handle")
+                            logger.error("NSGodotAppView.layout DisplayServer.shared is not embedded")
+                            print("[SwiftGodotKit] NSGodotAppView.layout DisplayServer.shared is not embedded")
                         }
                     }
 
@@ -130,13 +130,13 @@ public class NSGodotAppView: GodotView {
                 stderrLog("startGodotInstance instance.start() -> \(started)")
             }
             if app.displayDriver == "embedded", embedded == nil {
-                if let handle = DisplayServer.shared.handle {
-                    embedded = DisplayServerEmbedded(nativeHandle: handle)
+                if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                    embedded = displayServer
                     print("[SwiftGodotKit] startGodotInstance created embedded display server")
                     stderrLog("startGodotInstance created embedded display server")
                 } else {
-                    print("[SwiftGodotKit] startGodotInstance missing DisplayServer.shared.handle")
-                    stderrLog("startGodotInstance missing DisplayServer.shared.handle")
+                    print("[SwiftGodotKit] startGodotInstance DisplayServer.shared is not embedded")
+                    stderrLog("startGodotInstance DisplayServer.shared is not embedded")
                 }
             }
             resizeWindow()
