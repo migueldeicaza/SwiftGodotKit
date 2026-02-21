@@ -10,6 +10,49 @@ private func sampleLog(_ message: String) {
     }
 }
 
+private let runtimeEventTimeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm:ss.SSS"
+    return formatter
+}()
+
+private struct RuntimeEventEntry: Identifiable {
+    let id = UUID()
+    let timestamp: Date
+    let category: String
+    let message: String
+}
+
+private func runtimeEventCategory(_ event: GodotAppEvent) -> String {
+    switch event {
+    case .startupFailure(let failure):
+        return "startupFailure.\(failure.reason.rawValue)"
+    case .warning(let warning):
+        return "warning.\(warning.code.rawValue)"
+    case .bridge(let bridge):
+        return "bridge.\(bridge.state.rawValue)"
+    case .windowBinding(let binding):
+        return "windowBinding.\(binding.state.rawValue)"
+    case .lifecycle(let lifecycle):
+        return "lifecycle.\(lifecycle.label)"
+    }
+}
+
+private func describeRuntimeEvent(_ event: GodotAppEvent) -> String {
+    switch event {
+    case .startupFailure(let failure):
+        return "GodotAppEvent startupFailure reason=\(failure.reason.rawValue) sourcePath=\(failure.sourcePath) scene=\(failure.scene ?? "<nil>")"
+    case .warning(let warning):
+        return "GodotAppEvent warning code=\(warning.code.rawValue) detail=\(warning.detail)"
+    case .bridge(let bridge):
+        return "GodotAppEvent bridge state=\(bridge.state.rawValue)"
+    case .windowBinding(let binding):
+        return "GodotAppEvent windowBinding state=\(binding.state.rawValue) platform=\(binding.platform) node=\(binding.nodeName ?? "<nil>") instanceId=\(binding.instanceId.map(String.init) ?? "<nil>") ownsWindow=\(binding.ownsWindow)"
+    case .lifecycle(let lifecycle):
+        return "GodotAppEvent lifecycle label=\(lifecycle.label) notification=\(lifecycle.notification)"
+    }
+}
+
 @Godot
 class SpinningCube: Node3D {
     public override func _ready() {
@@ -156,6 +199,9 @@ struct ContentView: View {
     #else
     @State var app = GodotApp(packFile: "main.pck", godotPackPath: Bundle.module.bundlePath)
     #endif
+    @State private var runtimeEventHandlerId: UUID?
+    @State private var runtimeEventCounts: [String: Int] = [:]
+    @State private var runtimeEvents: [RuntimeEventEntry] = []
 
     private func ensureLifecycleSpawner(root: Node) {
         if root.findChild(pattern: DynamicNamedWindowSpawner.spawnerNodeName, recursive: true, owned: false) != nil {
@@ -177,6 +223,86 @@ struct ContentView: View {
             }
             ensureLifecycleSpawner(root: root)
         }
+    }
+
+    private var sortedRuntimeEventCounts: [(key: String, value: Int)] {
+        runtimeEventCounts.sorted { lhs, rhs in
+            if lhs.value == rhs.value {
+                return lhs.key < rhs.key
+            }
+            return lhs.value > rhs.value
+        }
+    }
+
+    private func recordRuntimeEvent(_ event: GodotAppEvent) {
+        let message = describeRuntimeEvent(event)
+        sampleLog(message)
+
+        let category = runtimeEventCategory(event)
+        runtimeEventCounts[category, default: 0] += 1
+        runtimeEvents.append(
+            RuntimeEventEntry(
+                timestamp: Date(),
+                category: category,
+                message: message
+            )
+        )
+
+        let maxEventCount = 150
+        if runtimeEvents.count > maxEventCount {
+            runtimeEvents.removeFirst(runtimeEvents.count - maxEventCount)
+        }
+    }
+
+    private var diagnosticsPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Runtime Diagnostics")
+                    .font(.headline)
+                Spacer()
+                Button("Clear") {
+                    runtimeEventCounts.removeAll()
+                    runtimeEvents.removeAll()
+                }
+                .buttonStyle(.bordered)
+                .disabled(runtimeEvents.isEmpty)
+            }
+
+            if sortedRuntimeEventCounts.isEmpty {
+                Text("Waiting for runtime events...")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(sortedRuntimeEventCounts, id: \.key) { item in
+                            Text("\(item.key): \(item.value)")
+                                .font(.system(.caption, design: .monospaced))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.secondary.opacity(0.15))
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(runtimeEvents.suffix(30).reversed())) { event in
+                        Text("\(runtimeEventTimeFormatter.string(from: event.timestamp)) [\(event.category)] \(event.message)")
+                            .font(.system(.caption, design: .monospaced))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .frame(maxHeight: 170)
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     var body: some View {
@@ -217,14 +343,31 @@ struct ContentView: View {
                 .frame(minWidth: 420, maxWidth: 420, maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            diagnosticsPanel
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
         .frame(minWidth: 800, minHeight: 600)
         .environment(\.godotApp, app)
         .onAppear {
+            if runtimeEventHandlerId == nil {
+                runtimeEventHandlerId = app.registerEventHandler { event in
+                    if Thread.isMainThread {
+                        recordRuntimeEvent(event)
+                    } else {
+                        DispatchQueue.main.async {
+                            recordRuntimeEvent(event)
+                        }
+                    }
+                }
+            }
             app.start()
             installLifecycleSpawnerWhenRootIsReady()
             sampleLog("GodotApp: Started")
+        }
+        .onDisappear {
+            app.unregisterEventHandler(runtimeEventHandlerId)
+            runtimeEventHandlerId = nil
         }
     }
 }
