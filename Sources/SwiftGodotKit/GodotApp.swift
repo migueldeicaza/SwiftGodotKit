@@ -89,6 +89,7 @@ public class GodotApp: ObservableObject {
     @ObservationIgnored public private(set) var isDrawing = true
     @ObservationIgnored private var hostBridge: SwiftGodotHostBridge?
     @ObservationIgnored private var callbacks: [UUID: ViewCallback] = [:]
+    @ObservationIgnored private var runtimeEventHandlers: [UUID: (GodotAppEvent) -> Void] = [:]
     @ObservationIgnored private var launchSourceOverride: String?
     @ObservationIgnored private var launchSceneOverride: String?
     @ObservationIgnored private var nextViewId: Int64 = 1
@@ -226,6 +227,15 @@ public class GodotApp: ObservableObject {
         instance = GodotInstance.create(args: args)
         guard let instance else {
             Logger.App.error("GodotApp.start failed to create GodotInstance")
+            emitRuntimeEvent(
+                .startupFailure(
+                    GodotStartupFailureEvent(
+                        reason: .instanceCreationFailed,
+                        sourcePath: sourcePath,
+                        scene: scene
+                    )
+                )
+            )
             return false
         }
         isPaused = false
@@ -244,6 +254,9 @@ public class GodotApp: ObservableObject {
     public func stop() {
         guard let instance else { return }
         Logger.App.info("GodotApp.stop destroying GodotInstance")
+        if hostBridge != nil {
+            emitRuntimeEvent(.bridge(GodotBridgeEvent(state: .detached)))
+        }
         GodotInstance.destroy(instance: instance)
         self.instance = nil
         self.hostBridge = nil
@@ -278,6 +291,14 @@ public class GodotApp: ObservableObject {
     public func runOnGodotThread(async: Bool = true, _ block: @escaping () -> Void) {
         guard let instance else {
             Logger.App.error("runOnGodotThread called before Godot instance was created")
+            emitRuntimeEvent(
+                .warning(
+                    GodotWarningEvent(
+                        code: .runOnGodotThreadBeforeInstance,
+                        detail: "runOnGodotThread called before Godot instance was created"
+                    )
+                )
+            )
             return
         }
         guard instance.isStarted() else { return }
@@ -376,6 +397,7 @@ public class GodotApp: ObservableObject {
 
     private func postMainLoopNotification(_ notification: Int32, label: String) {
         guard let instance, instance.isStarted() else { return }
+        emitRuntimeEvent(.lifecycle(GodotLifecycleEvent(label: label, notification: notification)))
         runOnGodotThread {
             Engine.getMainLoop()?.notification(what: notification)
             Logger.App.debug("MainLoop notification \(label, privacy: .public) (\(notification))")
@@ -426,6 +448,47 @@ public class GodotApp: ObservableObject {
     func unregisterViewCallbacks(id: UUID?) {
         guard let id else { return }
         callbacks[id] = nil
+    }
+
+    @discardableResult
+    public func registerEventHandler(_ handler: @escaping (GodotAppEvent) -> Void) -> UUID {
+        let id = UUID()
+        if Thread.isMainThread {
+            runtimeEventHandlers[id] = handler
+        } else {
+            DispatchQueue.main.sync {
+                runtimeEventHandlers[id] = handler
+            }
+        }
+        return id
+    }
+
+    public func unregisterEventHandler(_ id: UUID?) {
+        guard let id else { return }
+        if Thread.isMainThread {
+            runtimeEventHandlers[id] = nil
+        } else {
+            DispatchQueue.main.sync {
+                runtimeEventHandlers[id] = nil
+            }
+        }
+    }
+
+    func emitRuntimeEvent(_ event: GodotAppEvent) {
+        let dispatch = { [weak self] in
+            guard let self else { return }
+            let handlers = Array(self.runtimeEventHandlers.values)
+            guard !handlers.isEmpty else { return }
+            for handler in handlers {
+                handler(event)
+            }
+        }
+
+        if Thread.isMainThread {
+            dispatch()
+        } else {
+            DispatchQueue.main.async(execute: dispatch)
+        }
     }
 
     func pollBridgeAndReadiness() {
@@ -513,6 +576,7 @@ public class GodotApp: ObservableObject {
                 self?.broadcastMessage(message)
             }
             hostBridge = existing
+            emitRuntimeEvent(.bridge(GodotBridgeEvent(state: .attachedExisting)))
             return existing
         }
 
@@ -523,6 +587,7 @@ public class GodotApp: ObservableObject {
         }
         root.addChild(node: bridge)
         hostBridge = bridge
+        emitRuntimeEvent(.bridge(GodotBridgeEvent(state: .attachedCreated)))
         return bridge
     }
 
@@ -543,6 +608,15 @@ public class GodotApp: ObservableObject {
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: sourcePath, isDirectory: &isDirectory) else {
             Logger.App.error("GodotApp.start failed: source path does not exist: \(sourcePath, privacy: .public)")
+            emitRuntimeEvent(
+                .startupFailure(
+                    GodotStartupFailureEvent(
+                        reason: .sourcePathMissing,
+                        sourcePath: sourcePath,
+                        scene: scene
+                    )
+                )
+            )
             return nil
         }
 
@@ -550,17 +624,43 @@ public class GodotApp: ObservableObject {
             let projectFile = sourcePath + "/project.godot"
             guard FileManager.default.fileExists(atPath: projectFile) else {
                 Logger.App.error("GodotApp.start failed: missing project.godot in source directory: \(sourcePath, privacy: .public)")
+                emitRuntimeEvent(
+                    .startupFailure(
+                        GodotStartupFailureEvent(
+                            reason: .projectFileMissing,
+                            sourcePath: sourcePath,
+                            scene: scene
+                        )
+                    )
+                )
                 return nil
             }
 
             let cacheFile = sourcePath + "/.godot/global_script_class_cache.cfg"
             if !FileManager.default.fileExists(atPath: cacheFile) {
                 Logger.App.warning("GodotApp.start warning: missing global script cache at \(cacheFile, privacy: .public). Godot will need to rebuild cache.")
+                emitRuntimeEvent(
+                    .warning(
+                        GodotWarningEvent(
+                            code: .globalScriptCacheMissing,
+                            detail: "Missing global script cache at \(cacheFile). Godot will rebuild cache."
+                        )
+                    )
+                )
             }
 
             if let scene, let scenePath = resolveScenePathForValidation(scene: scene, sourceDirectory: sourcePath) {
                 guard FileManager.default.fileExists(atPath: scenePath) else {
                     Logger.App.error("GodotApp.start failed: scene does not exist: \(scenePath, privacy: .public)")
+                    emitRuntimeEvent(
+                        .startupFailure(
+                            GodotStartupFailureEvent(
+                                reason: .sceneMissing,
+                                sourcePath: sourcePath,
+                                scene: scene
+                            )
+                        )
+                    )
                     return nil
                 }
             }
@@ -572,13 +672,39 @@ public class GodotApp: ObservableObject {
             if scene.hasPrefix("/") {
                 if !FileManager.default.fileExists(atPath: scene) {
                     Logger.App.error("GodotApp.start failed: absolute scene path does not exist: \(scene, privacy: .public)")
+                    emitRuntimeEvent(
+                        .startupFailure(
+                            GodotStartupFailureEvent(
+                                reason: .sceneMissing,
+                                sourcePath: sourcePath,
+                                scene: scene
+                            )
+                        )
+                    )
                     return nil
                 }
             } else if scene.hasPrefix("file://"), let scenePath = normalizedPath(scene), !FileManager.default.fileExists(atPath: scenePath) {
                 Logger.App.error("GodotApp.start failed: file scene path does not exist: \(scenePath, privacy: .public)")
+                emitRuntimeEvent(
+                    .startupFailure(
+                        GodotStartupFailureEvent(
+                            reason: .sceneMissing,
+                            sourcePath: sourcePath,
+                            scene: scene
+                        )
+                    )
+                )
                 return nil
             } else if !scene.hasPrefix("res://") && !scene.contains("://") {
                 Logger.App.warning("GodotApp.start warning: scene '\(scene, privacy: .public)' is relative while launching from a pack file; validation is limited.")
+                emitRuntimeEvent(
+                    .warning(
+                        GodotWarningEvent(
+                            code: .limitedSceneValidation,
+                            detail: "Scene '\(scene)' is relative while launching from a pack file; validation is limited."
+                        )
+                    )
+                )
             }
         }
 
@@ -598,6 +724,14 @@ public class GodotApp: ObservableObject {
         }
         if scene.contains("://") {
             Logger.App.warning("GodotApp.start warning: skipping filesystem validation for scene URI: \(scene, privacy: .public)")
+            emitRuntimeEvent(
+                .warning(
+                    GodotWarningEvent(
+                        code: .skippedSceneValidationUri,
+                        detail: "Skipping filesystem validation for scene URI: \(scene)"
+                    )
+                )
+            )
             return nil
         }
         return sourceDirectory + "/" + scene
