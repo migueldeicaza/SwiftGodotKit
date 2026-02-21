@@ -39,7 +39,7 @@ public final class GodotAppViewHandle {
         return getRoot() != nil
     }
 
-    public func emitMessage(_ message: String) {
+    public func emitMessage(_ message: VariantDictionary) {
         app?.emitMessage(message)
     }
 
@@ -55,7 +55,7 @@ public final class GodotAppViewHandle {
 private struct ViewCallback {
     let handle: GodotAppViewHandle
     let onReady: ((GodotAppViewHandle) -> Void)?
-    let onMessage: ((String) -> Void)?
+    let onMessage: ((VariantDictionary) -> Void)?
     var didSendReady = false
 }
 
@@ -331,7 +331,7 @@ public class GodotApp: ObservableObject {
     func registerViewCallbacks(
         handle: GodotAppViewHandle,
         onReady: ((GodotAppViewHandle) -> Void)?,
-        onMessage: ((String) -> Void)?
+        onMessage: ((VariantDictionary) -> Void)?
     ) -> UUID {
         let id = UUID()
         callbacks[id] = ViewCallback(handle: handle, onReady: onReady, onMessage: onMessage)
@@ -349,7 +349,7 @@ public class GodotApp: ObservableObject {
         notifyReadyIfPossible()
     }
 
-    public func emitMessage(_ message: String) {
+    public func emitMessage(_ message: VariantDictionary) {
         runOnGodotThread { [weak self] in
             guard let self, let bridge = self.ensureHostBridgeAttached() else { return }
             bridge.messageFromHost.emit(message)
@@ -383,7 +383,7 @@ public class GodotApp: ObservableObject {
         }
     }
 
-    private func broadcastMessage(_ message: String) {
+    private func broadcastMessage(_ message: VariantDictionary) {
         let messageCallbacks = callbacks.values.compactMap { $0.onMessage }
         if messageCallbacks.isEmpty {
             return
