@@ -5,6 +5,7 @@
 #if os(macOS)
 import AppKit
 import Foundation
+import QuartzCore
 
 import SwiftGodot
 public class GodotView: NSView {
@@ -13,6 +14,7 @@ public class GodotView: NSView {
     
     public var renderingLayer: CAMetalLayer? = nil
     internal var embedded: DisplayServerEmbedded?
+    private var lastResizeSize: Vector2i?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -26,12 +28,13 @@ public class GodotView: NSView {
     
     private func commonInit() {
         wantsLayer = true
-        
+
         let renderingLayer = CAMetalLayer()
         renderingLayer.frame = bounds
-        
+
         layer?.addSublayer(renderingLayer)
         self.renderingLayer = renderingLayer
+        updateRenderingLayerGeometry()
     }
     
     deinit {
@@ -46,18 +49,33 @@ public class GodotView: NSView {
     
     public override var bounds: CGRect {
         didSet {
-            renderingLayer?.frame = bounds
+            updateRenderingLayerGeometry()
             resizeWindow()
         }
     }
-    
+
+    public override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        updateRenderingLayerGeometry()
+        resizeWindow()
+    }
+
     func resizeWindow() {
         guard let embedded else { return }
-        
-        // FIXME: Get correct id
+        let scale = renderingLayer?.contentsScale ?? 1.0
+        let pixelWidth = Int32(max(1, self.bounds.size.width * scale))
+        let pixelHeight = Int32(max(1, self.bounds.size.height * scale))
+        let size = Vector2i(x: pixelWidth, y: pixelHeight)
+        if lastResizeSize != size {
+            print("[SwiftGodotKit] resizeWindow id=\(windowId) size=\(pixelWidth)x\(pixelHeight)")
+            if let data = ("[SwiftGodotKit] resizeWindow id=\(windowId) size=\(pixelWidth)x\(pixelHeight)\n").data(using: .utf8) {
+                FileHandle.standardError.write(data)
+            }
+            lastResizeSize = size
+        }
+
         embedded.resizeWindow(
-            size: Vector2i(x: Int32(self.bounds.size.width),
-                           y: Int32(self.bounds.size.height)),
+            size: size,
             id: Int32(windowId)
         )
     }
@@ -144,6 +162,19 @@ public class GodotView: NSView {
         Input.parseInputEvent(mb)
     }
 
+}
+
+private extension GodotView {
+    func updateRenderingLayerGeometry() {
+        guard let renderingLayer else { return }
+        renderingLayer.frame = bounds
+        let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1.0
+        renderingLayer.contentsScale = scale
+        renderingLayer.drawableSize = CGSize(
+            width: max(1, bounds.size.width * scale),
+            height: max(1, bounds.size.height * scale)
+        )
+    }
 }
 
 private extension GodotView {

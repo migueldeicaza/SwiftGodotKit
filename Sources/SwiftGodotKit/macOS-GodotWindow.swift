@@ -9,11 +9,12 @@ import SwiftGodot
 public struct GodotWindow: NSViewRepresentable {
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     let callback: ((SwiftGodot.Window)->())?
-    var node: String?
+    let node: String?
     var view = NSGodotWindow()
 
-    public init (callback: ((SwiftGodot.Window)->())?) {
+    public init(node: String? = nil, callback: ((SwiftGodot.Window)->())?) {
         self.callback = callback
+        self.node = node
     }
     
     public func makeNSView(context: Context) -> NSGodotWindow {
@@ -30,6 +31,7 @@ public struct GodotWindow: NSViewRepresentable {
 
 public class NSGodotWindow: GodotView {
     private var subwindow: SwiftGodot.Window?
+    private var ownsSubwindow = false
     
     var callback: ((SwiftGodot.Window)->())?
     var node: String?
@@ -41,15 +43,24 @@ public class NSGodotWindow: GodotView {
     }
     
     func initGodotWindow() {
+        guard app?.displayDriver == "embedded" else {
+            return
+        }
         if (!inited) {
             if let instance = app?.instance {
                 if !instance.isStarted() {
                     return
                 }
                 if let node {
-                    subwindow = ((Engine.getMainLoop() as? SceneTree)?.root?.findChild(pattern: node) as? SwiftGodot.Window)
+                    guard let existingWindow = (Engine.getMainLoop() as? SceneTree)?.root?.findChild(pattern: node) as? SwiftGodot.Window else {
+                        logger.error("initGodotWindow: missing window named \(node, privacy: .public)")
+                        return
+                    }
+                    subwindow = existingWindow
+                    ownsSubwindow = false
                 } else {
                     subwindow = Window()
+                    ownsSubwindow = true
                 }
                 guard let renderingLayer else {
                     logger.critical("GodotWindow.renderingLayer was not initialized")
@@ -62,9 +73,9 @@ public class NSGodotWindow: GodotView {
                     }
                     let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
                     subwindow.setNativeSurface(windowNativeSurface)
-                    if let root = (Engine.getMainLoop() as? SceneTree)?.root {
+                    if ownsSubwindow, let root = (Engine.getMainLoop() as? SceneTree)?.root {
                         root.addChild(node: subwindow)
-                    } else {
+                    } else if ownsSubwindow {
                         logger.error("initGodotWindow: could not turn Engine.mainLoop into a sceneTree")
                     }
                     inited = true
@@ -76,6 +87,10 @@ public class NSGodotWindow: GodotView {
     }
     
     public override func layout() {
+        guard app?.displayDriver == "embedded" else {
+            super.layout()
+            return
+        }
         renderingLayer?.frame = self.bounds
         if inited {
             if embedded == nil {
@@ -87,7 +102,12 @@ public class NSGodotWindow: GodotView {
     }
     
     public override func removeFromSuperview() {
-        subwindow?.getParent()?.removeChild(node: subwindow)
+        if ownsSubwindow {
+            subwindow?.getParent()?.removeChild(node: subwindow)
+        }
+        inited = false
+        subwindow = nil
+        embedded = nil
         super.removeFromSuperview()
     }
 }

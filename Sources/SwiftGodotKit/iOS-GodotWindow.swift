@@ -9,11 +9,12 @@ import SwiftUI
 import SwiftGodot
 
 public struct GodotWindow: UIViewRepresentable {
-    @State var node: String?
+    let node: String?
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     var view = UIGodotWindow()
 
-    public init (callback: ((SwiftGodot.Window)->())?) {
+    public init(node: String? = nil, callback: ((SwiftGodot.Window)->())?) {
+        self.node = node
         view.callback = callback
     }
     
@@ -46,6 +47,7 @@ public class UIGodotWindow: UIView {
     var node: String?
     var app: GodotApp?
     var inited = false
+    private var ownsSubwindow = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -78,6 +80,9 @@ public class UIGodotWindow: UIView {
     
     func initGodotWindow() {
         guard let app else { return }
+        if windowLayer == nil {
+            commonInit()
+        }
         
         if (!inited) {
             if let instance = app.instance {
@@ -86,16 +91,32 @@ public class UIGodotWindow: UIView {
                     return
                 }
                 if let node {
-                    subwindow = ((Engine.getMainLoop() as! SceneTree).root!.findChild(pattern: node)! as! Window)
+                    guard
+                        let sceneTree = Engine.getMainLoop() as? SceneTree,
+                        let root = sceneTree.root,
+                        let existingWindow = root.findChild(pattern: node) as? Window
+                    else {
+                        Logger.Window.error("initGodotWindow: could not find window named \(node, privacy: .public)")
+                        return
+                    }
+                    subwindow = existingWindow
+                    ownsSubwindow = false
                 } else {
                     subwindow = Window()
+                    ownsSubwindow = true
                 }
                 if let callback, let subwindow {
                     callback(subwindow)
                 }
-                let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer!).toOpaque()))
+                guard let windowLayer else {
+                    Logger.Window.error("initGodotWindow: windowLayer was nil")
+                    return
+                }
+                let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()))
                 subwindow?.setNativeSurface(windowNativeSurface)
-                (Engine.getMainLoop() as! SceneTree).root!.addChild(node: subwindow)
+                if ownsSubwindow, let sceneTree = Engine.getMainLoop() as? SceneTree, let root = sceneTree.root, let subwindow {
+                    root.addChild(node: subwindow)
+                }
                 inited = true
             } else {
                 app.queueGodotWindow(self)
@@ -244,14 +265,23 @@ public class UIGodotWindow: UIView {
     }
     
     public override func didMoveToSuperview() {
-        commonInit()
+        if superview == nil {
+            return
+        }
+        if windowLayer == nil {
+            commonInit()
+        }
         initGodotWindow()
     }
     
     public override func removeFromSuperview() {
-        if let subwindow {
+        if ownsSubwindow, let subwindow {
             subwindow.getParent()?.removeChild(node: subwindow)
         }
+        inited = false
+        subwindow = nil
+        embedded = nil
+        super.removeFromSuperview()
     }
 }
 #endif

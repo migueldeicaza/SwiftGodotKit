@@ -104,21 +104,28 @@ struct ContentView: View {
         }
     }
 
-    @State var app = GodotApp(packFile: "main.pck", godotPackPath: "/tmp")
+    #if os(macOS)
+    @State var app = GodotApp(
+        packFile: "",
+        godotPackPath: Bundle.module.bundlePath,
+        displayDriver: ProcessInfo.processInfo.environment["GODOT_DISPLAY_DRIVER"] ?? "macos"
+    )
+    #else
+    @State var app = GodotApp(packFile: "main.pck", godotPackPath: Bundle.module.bundlePath)
+    #endif
 
     var body: some View {
-        VStack {
+        VStack(spacing: 12) {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             Text("Hello, world!")
-            HStack {
-                GodotAppView()
-                extraViews
-
-            }
+            GodotAppView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black.opacity(0.1))
         }
         .padding()
+        .frame(minWidth: 800, minHeight: 600)
         .environment(\.godotApp, app)
         .onAppear {
             app.start()

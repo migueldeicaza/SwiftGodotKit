@@ -102,17 +102,29 @@ public class UIGodotAppView: UIView {
         guard let app else {
             return
         }
+        if renderingLayer == nil {
+            commonInit()
+        }
+        guard let renderingLayer else {
+            Logger.App.error("startGodotInstance: renderingLayer was nil")
+            return
+        }
         if let instance = app.instance {
+            let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
+            DisplayServerEmbedded.setNativeSurface(rendererNativeSurface)
             if !instance.isStarted() {
-                let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer!).toOpaque()))
-                DisplayServerEmbedded.setNativeSurface(rendererNativeSurface)
                 instance.start()
+                app.startPending()
+            }
+            if displayLink == nil {
                 let displayLink = CADisplayLink(target: self, selector: #selector(iterate))
                 displayLink.add(to: .current, forMode: RunLoop.Mode.default)
                 self.displayLink = displayLink
-
-                app.startPending()
             }
+            if embedded == nil {
+                embedded = DisplayServerEmbedded(nativeHandle: DisplayServer.shared.handle!)
+            }
+            resizeWindow()
         } else {
             app.queueStart(self)
         }
@@ -267,23 +279,26 @@ public class UIGodotAppView: UIView {
     public override func removeFromSuperview() {
         displayLink?.invalidate()
         displayLink = nil
-        
-        if let instance = app?.instance {
-            GodotInstance.destroy(instance: instance)
-        }
+        super.removeFromSuperview()
     }
     
     public override func didMoveToSuperview() {
-        commonInit()
+        if superview == nil {
+            return
+        }
+        if renderingLayer == nil {
+            commonInit()
+        }
         startGodotInstance()
     }
 
     @objc
     func iterate() {
-        if let instance = app?.instance {
-            if instance.isStarted() {
-                instance.iteration()
-            }
+        if let app, app.isPaused {
+            return
+        }
+        if let instance = app?.instance, instance.isStarted() {
+            instance.iteration()
         }
     }
 }
