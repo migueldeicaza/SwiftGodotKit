@@ -96,6 +96,7 @@ public class UIGodotAppView: UIView {
     
     deinit {
         renderingLayer?.removeFromSuperlayer()
+        unregisterCallbacks()
     }
     
     public override var bounds: CGRect {
@@ -349,10 +350,6 @@ public class UIGodotAppView: UIView {
             instance.iteration()
             app?.pollBridgeAndReadiness()
         }
-    }
-
-    deinit {
-        unregisterCallbacks()
     }
 }
 
