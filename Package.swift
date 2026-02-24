@@ -36,6 +36,7 @@ let package = Package(
             dependencies: [
                 "SwiftGodot",
                 "libgodot",
+                .target(name: "apple_plugin_stubs", condition: .when(platforms: [.iOS])),
                 .target(name: "mac_libgodot", condition: .when(platforms: [.macOS])),
                 .target(name: "ios_libgodot", condition: .when(platforms: [.iOS])),
             ]
@@ -54,6 +55,12 @@ let package = Package(
                 .copy(".godot"),
                 .copy("godot"),
             ]
+        ),
+
+        .target(
+            name: "apple_plugin_stubs",
+            path: "Sources/apple_plugin_stubs",
+            publicHeadersPath: "include"
         ),
 
         macLibgodotTarget,
