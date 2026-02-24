@@ -58,7 +58,6 @@ typealias TTGodotWindow = NSGodotWindow
 
 public class NSGodotAppView: GodotView {
     private var link : CADisplayLink? = nil
-    private var frameTimer: Foundation.Timer? = nil
     private var frameCount: UInt64 = 0
     private var loggedSurfaceBinding = false
     private var didEmitDisplayServerNotEmbeddedWarning = false
@@ -164,15 +163,6 @@ public class NSGodotAppView: GodotView {
                 print("[SwiftGodotKit] CADisplayLink installed")
                 stderrLog("CADisplayLink installed")
             }
-            if frameTimer == nil {
-                let timer = Foundation.Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-                    self?.iterateFrame()
-                }
-                RunLoop.main.add(timer, forMode: .common)
-                frameTimer = timer
-                print("[SwiftGodotKit] Frame timer installed")
-                stderrLog("Frame timer installed")
-            }
         } else if let app {
             app.queueStart(self)
         }
@@ -183,8 +173,6 @@ public class NSGodotAppView: GodotView {
         if superview == nil {
             link?.invalidate()
             link = nil
-            frameTimer?.invalidate()
-            frameTimer = nil
             frameCount = 0
             unregisterCallbacks()
         }
