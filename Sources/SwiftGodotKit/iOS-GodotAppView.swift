@@ -6,9 +6,9 @@
 import OSLog
 import SwiftUI
 import SwiftGodot
-import UIKit
-
 #if os(iOS)
+import UIKit
+#endif
 public struct GodotAppView: UIViewRepresentable {
     @SwiftUI.Environment(\.godotApp) var app: GodotApp?
     var view = UIGodotAppView(frame: CGRect.zero)
