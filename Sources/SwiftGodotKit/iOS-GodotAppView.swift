@@ -65,7 +65,7 @@ public class UIGodotAppView: UIView {
     public var renderingLayer: CAMetalLayer? = nil
     private var displayLink : CADisplayLink? = nil
     
-    private var embedded: DisplayServerEmbedded?
+    private var embedded: DisplayServer?
     private var callbackToken: UUID?
     private weak var callbackApp: GodotApp?
     private var didEmitDisplayServerNotEmbeddedWarning = false
@@ -111,7 +111,8 @@ public class UIGodotAppView: UIView {
             return
         }
         
-        embedded.resizeWindow(
+        DisplayServerAppleEmbeddedBridge.resizeWindow(
+            embedded,
             size: Vector2i(x: Int32(self.bounds.size.width * self.contentScaleFactor), y: Int32(self.bounds.size.height * self.contentScaleFactor)),
             id: Int32(DisplayServer.mainWindowId)
         )
@@ -124,7 +125,7 @@ public class UIGodotAppView: UIView {
         if let instance = app?.instance {
             if instance.isStarted() {
                 if embedded == nil {
-                    if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                    if let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() {
                         embedded = displayServer
                     } else {
                         emitDisplayServerNotEmbeddedWarning(context: "layoutSubviews")
@@ -152,7 +153,7 @@ public class UIGodotAppView: UIView {
         }
         if let instance = app.instance {
             let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
-            DisplayServerEmbedded.setNativeSurface(rendererNativeSurface)
+            DisplayServerAppleEmbeddedBridge.setNativeSurface(rendererNativeSurface)
             if !instance.isStarted() {
                 instance.start()
                 app.startPending()
@@ -163,7 +164,7 @@ public class UIGodotAppView: UIView {
                 self.displayLink = displayLink
             }
             if embedded == nil {
-                if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                if let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() {
                     embedded = displayServer
                 } else {
                     emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
@@ -203,10 +204,11 @@ public class UIGodotAppView: UIView {
                 guard let touchId = touch["touchId"] as? Int,
                       let location = touch["location"] as? CGPoint,
                       let tapCount = touch["tapCount"] as? Int,
-                      let displayServer = DisplayServer.shared as? DisplayServerEmbedded
+                      let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton()
                 else { continue }
                 
-                displayServer.touchPress (
+                DisplayServerAppleEmbeddedBridge.touchPress(
+                    displayServer,
                     idx: Int32(touchId),
                     x: Int32(location.x * contentsScale),
                     y: Int32(location.y * contentsScale),
@@ -257,8 +259,8 @@ public class UIGodotAppView: UIView {
                       let azim = touch["azim"] as? CGVector,
                       let force = touch["force"] as? CGFloat,
                       let maximumPossibleForce = touch["maximumPossibleForce"] as? CGFloat,
-                      let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { continue }
-                displayServer.touchDrag(idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
+                      let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { continue }
+                DisplayServerAppleEmbeddedBridge.touchDrag(displayServer, idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
             }
         }()
     }
@@ -288,8 +290,9 @@ public class UIGodotAppView: UIView {
             for touch in touchData {
                 guard let touchId = touch["touchId"] as? Int,
                       let location = touch["location"] as? CGPoint,
-                      let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { continue }
-                displayServer.touchPress (
+                      let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { continue }
+                DisplayServerAppleEmbeddedBridge.touchPress(
+                    displayServer,
                     idx: Int32(touchId),
                     x: Int32(location.x * contentsScale),
                     y: Int32(location.y * contentsScale),
@@ -317,9 +320,9 @@ public class UIGodotAppView: UIView {
             let windowId = Int32(DisplayServer.mainWindowId)
             for touch in touchData {
                 guard let touchId = touch["touchId"] as? Int,
-                      let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { continue }
+                      let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { continue }
                 
-                displayServer.touchesCanceled(idx: Int32(touchId), window: windowId)
+                DisplayServerAppleEmbeddedBridge.touchesCanceled(displayServer, idx: Int32(touchId), window: windowId)
             }
         }()
     }
@@ -357,7 +360,7 @@ private extension UIGodotAppView {
     func emitDisplayServerNotEmbeddedWarning(context: String) {
         guard !didEmitDisplayServerNotEmbeddedWarning else { return }
         didEmitDisplayServerNotEmbeddedWarning = true
-        let detail = "DisplayServer.shared is not DisplayServerEmbedded (\(context))"
+        let detail = "DisplayServer.shared is not DisplayServerAppleEmbedded (\(context))"
         Logger.App.error("\(detail, privacy: .public)")
         app?.emitRuntimeEvent(
             .warning(

@@ -40,7 +40,7 @@ public struct GodotWindow: UIViewRepresentable {
 
 public class UIGodotWindow: UIView {
     public var windowLayer: CAMetalLayer?
-    private var embedded: DisplayServerEmbedded?
+    private var embedded: DisplayServer?
     private var subwindow: SwiftGodot.Window?
     private var boundWindowInstanceId: Int64?
     
@@ -122,7 +122,7 @@ public class UIGodotWindow: UIView {
     
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let windowLayer, let app, app.instance != nil else { return }
-        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -143,13 +143,13 @@ public class UIGodotWindow: UIView {
             let touchId = touch["touchId"] as! Int
             let location = touch["location"] as! CGPoint
             let tapCount = touch["tapCount"] as! Int
-            displayServer.touchPress(idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: true, doubleClick: tapCount > 1, window: windowId)
+            DisplayServerAppleEmbeddedBridge.touchPress(displayServer, idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: true, doubleClick: tapCount > 1, window: windowId)
         }
     }
     
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let windowLayer, let app, app.instance != nil else { return }
-        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -184,13 +184,13 @@ public class UIGodotWindow: UIView {
             let azim = touch["azim"] as! CGVector
             let force = touch["force"] as! CGFloat
             let maximumPossibleForce = touch["maximumPossibleForce"] as! CGFloat
-            displayServer.touchDrag(idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
+            DisplayServerAppleEmbeddedBridge.touchDrag(displayServer, idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
         }
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let windowLayer, let app, app.instance != nil else { return }
-        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -211,13 +211,13 @@ public class UIGodotWindow: UIView {
         for touch in touchData {
             let touchId = touch["touchId"] as! Int
             let location = touch["location"] as! CGPoint
-            displayServer.touchPress(idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: false, doubleClick: false, window: windowId)
+            DisplayServerAppleEmbeddedBridge.touchPress(displayServer, idx: Int32(touchId), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressed: false, doubleClick: false, window: windowId)
         }
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let app, app.instance != nil else { return }
-        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServer.shared as? DisplayServerEmbedded else { return }
+        guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
 
         var touchData: [[String : Any]] = []
         for touch in touches {
@@ -231,13 +231,13 @@ public class UIGodotWindow: UIView {
         
         for touch in touchData {
             let touchId = touch["touchId"] as! Int
-            displayServer.touchesCanceled(idx: Int32(touchId), window: windowId)
+            DisplayServerAppleEmbeddedBridge.touchesCanceled(displayServer, idx: Int32(touchId), window: windowId)
         }
     }
     
     func resizeWindow() {
         if let embedded, let subwindow, inited, isBoundWindowAlive() {
-            embedded.resizeWindow(size: Vector2i(x: Int32(self.bounds.size.width * self.contentScaleFactor), y: Int32(self.bounds.size.height * self.contentScaleFactor)), id: subwindow.getWindowId())
+            DisplayServerAppleEmbeddedBridge.resizeWindow(embedded, size: Vector2i(x: Int32(self.bounds.size.width * self.contentScaleFactor), y: Int32(self.bounds.size.height * self.contentScaleFactor)), id: subwindow.getWindowId())
         }
     }
     
@@ -246,7 +246,7 @@ public class UIGodotWindow: UIView {
         initGodotWindow()
         if inited {
             if embedded == nil {
-                embedded = DisplayServer.shared as? DisplayServerEmbedded
+                embedded = DisplayServerAppleEmbeddedBridge.getSingleton()
             }
             resizeWindow()
         }
