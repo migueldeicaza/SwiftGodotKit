@@ -1,17 +1,93 @@
 #!/bin/bash
 set -euo pipefail
 
+BUILD_ARTIFACTS=0
+CREATE_ZIPS=0
+CONFIGURATION=release
+JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 8)"
+
+usage() {
+    cat <<EOF
+usage: $0 [options] <SwiftGodot dir> <godot dir> <output dir>
+
+Build and/or package libgodot artifacts into xcframeworks under:
+    <output dir>/mac/libgodot.xcframework
+    <output dir>/ios/libgodot.xcframework
+
+Options:
+    --build                  Build the Godot SCons artifacts before packaging.
+    --configuration <mode>   release or debug. Defaults to release.
+    --zip                    Also create SwiftPM payload zips and print checksums.
+    --jobs <count>           SCons parallelism when using --build. Defaults to CPU count.
+    -h, --help               Show this help.
+
+Canonical release payload:
+    $0 --build --configuration release --zip <SwiftGodot dir> <godot dir> <output dir>
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --build)
+            BUILD_ARTIFACTS=1
+            shift
+            ;;
+        --configuration)
+            if [[ $# -lt 2 ]]; then
+                echo "error: --configuration requires release or debug" >&2
+                exit 1
+            fi
+            CONFIGURATION="$2"
+            shift 2
+            ;;
+        --zip)
+            CREATE_ZIPS=1
+            shift
+            ;;
+        --jobs|-j)
+            if [[ $# -lt 2 ]]; then
+                echo "error: --jobs requires a count" >&2
+                exit 1
+            fi
+            JOBS="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            echo "error: unknown option: $1" >&2
+            usage
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
 if [[ $# -lt 3 ]]; then
-    echo "usage: $0 <SwiftGodot dir> <godot dir> <output dir>"
-    echo ""
-    echo "Build libgodot artifacts with SCons first, then run this script to"
-    echo "package them into xcframeworks under <output dir>/mac and <output dir>/ios."
+    usage
     exit 1
 fi
 
 SWIFTGODOT_DIR="$(cd "$1" && pwd)"
 GODOT_DIR="$(cd "$2" && pwd)"
 OUTPUT_DIR="$(cd "$3" && pwd)"
+
+case "$CONFIGURATION" in
+    release|debug)
+        ;;
+    *)
+        echo "error: --configuration must be release or debug" >&2
+        exit 1
+        ;;
+esac
 
 MAC_ARM_RELEASE_LIB="$GODOT_DIR/bin/libgodot.macos.template_release.arm64.dylib"
 MAC_X86_RELEASE_LIB="$GODOT_DIR/bin/libgodot.macos.template_release.x86_64.dylib"
@@ -23,6 +99,70 @@ IOS_X86_SIM_RELEASE_LIB="$GODOT_DIR/bin/libgodot.ios.template_release.x86_64.sim
 IOS_ARM_DEBUG_LIB="$GODOT_DIR/bin/libgodot.ios.template_debug.arm64.a"
 IOS_ARM_SIM_DEBUG_LIB="$GODOT_DIR/bin/libgodot.ios.template_debug.arm64.simulator.a"
 IOS_X86_SIM_DEBUG_LIB="$GODOT_DIR/bin/libgodot.ios.template_debug.x86_64.simulator.a"
+
+run_scons() {
+    (
+        cd "$GODOT_DIR"
+        scons "$@" "-j$JOBS"
+    )
+}
+
+build_godot_artifacts() {
+    local target="template_$CONFIGURATION"
+
+    echo "Building macOS libgodot ($CONFIGURATION)..."
+    run_scons platform=macos arch=arm64 target="$target" library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
+    run_scons platform=macos arch=x86_64 target="$target" library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
+
+    echo "Building iOS libgodot ($CONFIGURATION)..."
+    run_scons platform=ios arch=arm64 simulator=no target="$target" vulkan=no metal=yes disable_path_overrides=no
+    run_scons platform=ios arch=arm64 simulator=yes target="$target" vulkan=no metal=yes disable_path_overrides=no
+    run_scons platform=ios arch=x86_64 simulator=yes target="$target" vulkan=no metal=yes disable_path_overrides=no
+}
+
+select_artifacts() {
+    if [[ "$CONFIGURATION" == "release" ]]; then
+        MAC_ARM_LIB="$MAC_ARM_RELEASE_LIB"
+        MAC_X86_LIB="$MAC_X86_RELEASE_LIB"
+        IOS_DEVICE_LIB="$IOS_ARM_RELEASE_LIB"
+        IOS_SIM_ARM_LIB="$IOS_ARM_SIM_RELEASE_LIB"
+        IOS_SIM_X86_LIB="$IOS_X86_SIM_RELEASE_LIB"
+    else
+        MAC_ARM_LIB="$MAC_ARM_DEBUG_LIB"
+        MAC_X86_LIB="$MAC_X86_DEBUG_LIB"
+        IOS_DEVICE_LIB="$IOS_ARM_DEBUG_LIB"
+        IOS_SIM_ARM_LIB="$IOS_ARM_SIM_DEBUG_LIB"
+        IOS_SIM_X86_LIB="$IOS_X86_SIM_DEBUG_LIB"
+    fi
+}
+
+zip_payloads() {
+    local mac_zip="$OUTPUT_DIR/mac/libgodot-macos.xcframework.zip"
+    local ios_zip="$OUTPUT_DIR/ios/libgodot-ios.xcframework.zip"
+
+    if [[ ! -d "$OUTPUT_DIR/mac/libgodot.xcframework" || ! -d "$OUTPUT_DIR/ios/libgodot.xcframework" ]]; then
+        echo "error: cannot create zips until both xcframeworks exist" >&2
+        exit 1
+    fi
+
+    echo "Creating SwiftPM payload zips..."
+    rm -f "$mac_zip" "$ios_zip"
+    (cd "$OUTPUT_DIR/mac" && ditto -c -k --sequesterRsrc --keepParent libgodot.xcframework libgodot-macos.xcframework.zip)
+    (cd "$OUTPUT_DIR/ios" && ditto -c -k --sequesterRsrc --keepParent libgodot.xcframework libgodot-ios.xcframework.zip)
+
+    echo ""
+    echo "SwiftPM checksums:"
+    echo "macOS $(swift package compute-checksum "$mac_zip")"
+    echo "iOS   $(swift package compute-checksum "$ios_zip")"
+    echo ""
+    echo "Payloads:"
+    echo "  $mac_zip"
+    echo "  $ios_zip"
+}
+
+if [[ "$BUILD_ARTIFACTS" == "1" ]]; then
+    build_godot_artifacts
+fi
 
 mkdir -p "$OUTPUT_DIR/mac" "$OUTPUT_DIR/ios"
 
@@ -37,16 +177,10 @@ if [[ -f "$GODOT_DIR/core/extension/gdextension_interface.gen.h" ]]; then
     cp "$GODOT_DIR/core/extension/gdextension_interface.gen.h" "$HEADERS_DIR/gdextension_interface.gen.h"
 fi
 
-echo "Packaging macOS libgodot..."
-if [[ -f "$MAC_ARM_DEBUG_LIB" && -f "$MAC_X86_DEBUG_LIB" ]]; then
-    MAC_ARM_LIB="$MAC_ARM_DEBUG_LIB"
-    MAC_X86_LIB="$MAC_X86_DEBUG_LIB"
-elif [[ -f "$MAC_ARM_RELEASE_LIB" && -f "$MAC_X86_RELEASE_LIB" ]]; then
-    MAC_ARM_LIB="$MAC_ARM_RELEASE_LIB"
-    MAC_X86_LIB="$MAC_X86_RELEASE_LIB"
-fi
+select_artifacts
 
-if [[ -n "${MAC_ARM_LIB:-}" && -n "${MAC_X86_LIB:-}" ]]; then
+echo "Packaging macOS libgodot..."
+if [[ -f "$MAC_ARM_LIB" && -f "$MAC_X86_LIB" ]]; then
     if [[ -d "$OUTPUT_DIR/mac/libgodot.xcframework" ]]; then
         mv "$OUTPUT_DIR/mac/libgodot.xcframework" "$OUTPUT_DIR/mac/libgodot.xcframework.bak.$(date +%s)"
     fi
@@ -67,27 +201,13 @@ else
 Missing macOS libgodot dylibs.
 Build them first with:
     cd $GODOT_DIR
-    scons platform=macos arch=arm64 target=template_debug library_type=shared_library disable_path_overrides=no
-    scons platform=macos arch=x86_64 target=template_debug library_type=shared_library disable_path_overrides=no
+    scons platform=macos arch=arm64 target=template_$CONFIGURATION library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
+    scons platform=macos arch=x86_64 target=template_$CONFIGURATION library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
 EOF
 fi
 
 echo "Packaging iOS libgodot..."
-IOS_DEVICE_LIB=""
-IOS_SIM_ARM_LIB=""
-IOS_SIM_X86_LIB=""
-
-if [[ -f "$IOS_ARM_RELEASE_LIB" ]]; then
-    IOS_DEVICE_LIB="$IOS_ARM_RELEASE_LIB"
-    IOS_SIM_ARM_LIB="$IOS_ARM_SIM_RELEASE_LIB"
-    IOS_SIM_X86_LIB="$IOS_X86_SIM_RELEASE_LIB"
-elif [[ -f "$IOS_ARM_DEBUG_LIB" ]]; then
-    IOS_DEVICE_LIB="$IOS_ARM_DEBUG_LIB"
-    IOS_SIM_ARM_LIB="$IOS_ARM_SIM_DEBUG_LIB"
-    IOS_SIM_X86_LIB="$IOS_X86_SIM_DEBUG_LIB"
-fi
-
-if [[ -n "$IOS_DEVICE_LIB" ]]; then
+if [[ -f "$IOS_DEVICE_LIB" ]]; then
     if [[ -d "$OUTPUT_DIR/ios/libgodot.xcframework" ]]; then
         mv "$OUTPUT_DIR/ios/libgodot.xcframework" "$OUTPUT_DIR/ios/libgodot.xcframework.bak.$(date +%s)"
     fi
@@ -129,10 +249,14 @@ else
 Missing iOS libgodot static libraries.
 Build them first with:
     cd $GODOT_DIR
-    scons platform=ios arch=arm64 simulator=no target=template_release vulkan=no metal=yes disable_path_overrides=no
-    scons platform=ios arch=arm64 simulator=yes target=template_release vulkan=no metal=yes disable_path_overrides=no
-    scons platform=ios arch=x86_64 simulator=yes target=template_release vulkan=no metal=yes disable_path_overrides=no
+    scons platform=ios arch=arm64 simulator=no target=template_$CONFIGURATION vulkan=no metal=yes disable_path_overrides=no
+    scons platform=ios arch=arm64 simulator=yes target=template_$CONFIGURATION vulkan=no metal=yes disable_path_overrides=no
+    scons platform=ios arch=x86_64 simulator=yes target=template_$CONFIGURATION vulkan=no metal=yes disable_path_overrides=no
 EOF
+fi
+
+if [[ "$CREATE_ZIPS" == "1" ]]; then
+    zip_payloads
 fi
 
 echo "Done. Local frameworks are available under $OUTPUT_DIR."
