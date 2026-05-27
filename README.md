@@ -92,11 +92,38 @@ Using mismatched branches can compile but fail at runtime with null
 
 ## Building libgodot locally
 
-The package manifest uses local xcframeworks in `SwiftGodotKit/build/*`.
-Build `godot` locally, then package using the helper script in
-`scripts/make-libgodot.xcframework`. The script expects the SwiftGodot checkout as well as
-the `godot/` directory that ships with this repo and produces the layout that
-`Package.swift` looks for:
+The package manifest consumes published SwiftPM binary targets, but the release
+payloads are produced locally from the adjacent `godot` checkout. The helper
+script in `scripts/make-libgodot.xcframework` builds and packages the artifacts
+that `Package.swift` expects.
+
+Prerequisites:
+
+- Xcode command-line tools.
+- `scons` available in `PATH`.
+- `gh` authenticated with permission to create releases in `migueldeicaza/godot`
+  if you are publishing.
+- Adjacent checkouts at `../SwiftGodot` and `../godot`, or pass overrides to
+  `make` as shown below.
+
+The script produces this local layout:
+
+```
+SwiftGodotKit/build/mac/libgodot.xcframework
+SwiftGodotKit/build/mac/libgodot-macos.xcframework.zip
+SwiftGodotKit/build/ios/libgodot.xcframework
+SwiftGodotKit/build/ios/libgodot-ios.xcframework.zip
+```
+
+You can override the default paths and target repository:
+
+```
+cd SwiftGodotKit/scripts
+make release-payloads SWIFTGODOT=/path/to/SwiftGodot GODOT=/path/to/godot OUTPUT=/tmp/libgodot-build
+make publish-release VERSION=v4.6.x GODOT_REPO=owner/repo
+```
+
+### Maintainer Release Flow
 
 The canonical release-payload path is:
 
@@ -109,7 +136,7 @@ This builds release Godot slices, packages `build/mac/libgodot.xcframework`
 and `build/ios/libgodot.xcframework`, creates SwiftPM payload zips, and prints
 the checksums to paste into `Package.swift`.
 
-To publish those zips to GitHub and update `Package.swift` automatically:
+To publish existing zips to GitHub and update `Package.swift` automatically:
 
 ```
 cd SwiftGodotKit/scripts
@@ -129,17 +156,45 @@ checksums, and rewrite only the `mac_libgodot` and `ios_libgodot` binary target
 URLs/checksums in `Package.swift`. Use a new version tag for every binary
 payload; SwiftPM caches binary target URLs aggressively.
 
-If you want to run the steps manually, use the same commands the script runs:
+After publishing:
+
+1. Review the `Package.swift` diff.
+2. Commit the updated binary target URLs/checksums.
+3. Tag or release `SwiftGodotKit` so users can depend on the package version
+   that references the new libgodot payloads.
+
+The publish target intentionally fails if the GitHub release already exists.
+Do not replace zip assets under an existing release tag; SwiftPM clients may
+keep stale artifacts or see checksum mismatches.
+
+### Local Packaging Targets
+
+Useful `make` targets:
+
+```
+make package          # Package already-built artifacts into local xcframeworks.
+make zip              # Package already-built release artifacts and create zips/checksums.
+make release-payloads # Build release slices, package xcframeworks, create zips/checksums.
+make debug-payloads   # Build debug slices, package xcframeworks, create zips/checksums.
+make publish-release VERSION=v4.6.x
+make release VERSION=v4.6.x
+```
+
+`make release VERSION=v4.6.x` is the full maintainer path: rebuild, zip,
+publish to GitHub, and update `Package.swift`.
+
+### Manual Build Commands
+
+If you want to run the steps manually, use the same commands the script runs.
+Run these from the adjacent `godot` checkout:
 
 1. Build macOS dylibs (Metal-only, no MoltenVK)
    ```
-   cd godot
    scons platform=macos arch=arm64 target=template_release library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
    scons platform=macos arch=x86_64 target=template_release library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
    ```
 2. Build iOS static archives (release + simulator slices, Metal-only runtime)
    ```
-   cd godot
    scons platform=ios arch=arm64 simulator=no target=template_release vulkan=no metal=yes disable_path_overrides=no
    scons platform=ios arch=arm64 simulator=yes target=template_release vulkan=no metal=yes disable_path_overrides=no
    scons platform=ios arch=x86_64 simulator=yes target=template_release vulkan=no metal=yes disable_path_overrides=no
@@ -154,6 +209,24 @@ If you want to run the steps manually, use the same commands the script runs:
    the manifest automatically. The zip files are created next to each
    xcframework as `libgodot-macos.xcframework.zip` and
    `libgodot-ios.xcframework.zip`.
+
+### How Users Consume A Release
+
+Users do not download the libgodot zips manually. Once `Package.swift` points at
+the published binary targets, users add `SwiftGodotKit` through SwiftPM or Xcode:
+
+```swift
+.package(url: "https://github.com/migueldeicaza/SwiftGodotKit", exact: "<SwiftGodotKit tag>")
+```
+
+and depend on the product:
+
+```swift
+.product(name: "SwiftGodotKit", package: "SwiftGodotKit")
+```
+
+SwiftPM downloads `libgodot-macos.xcframework.zip` or
+`libgodot-ios.xcframework.zip` automatically for the target platform.
 
 Note for Godot 4.6 on macOS: template `libgodot` builds usually expose only
 `macos`/`headless` display drivers. `TrivialSample` therefore defaults to
