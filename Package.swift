@@ -3,13 +3,13 @@ import PackageDescription
 let macLibgodotTarget: Target = .binaryTarget(
     name: "mac_libgodot",
     url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.4/libgodot-macos.xcframework.zip",
-    checksum: "239485f07b67723f9b6790788049401e9c1e4dbd955a80a6cf88c4569033b006"
+    checksum: "2d8c2aaa336fe7c0f621f390c88ce9efb735f6b3c715657c1f665d26134db3a4"
 )
 
 let iosLibgodotTarget: Target = .binaryTarget(
     name: "ios_libgodot",
     url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.4/libgodot-ios.xcframework.zip",
-    checksum: "d9e078f6375a12e7a29579a5c65269c0e5bad80c5e48e6eb4c6e47068af9656a"
+    checksum: "c7b945aae1e02eabafa6578930e1ab3ac17cd1f8665ad3af4482447646d200c1"
 )
 
 let package = Package(
