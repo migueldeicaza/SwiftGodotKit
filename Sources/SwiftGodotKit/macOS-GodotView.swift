@@ -60,9 +60,25 @@ public class GodotView: NSView {
         resizeWindow()
     }
 
+    /// Scale between AppKit points and the pixels Godot's embedded window is sized in.
+    /// Both the window size and every input position must use this, or input lands at the
+    /// wrong place on any display where it is not 1.
+    var godotPixelScale: CGFloat {
+        renderingLayer?.contentsScale ?? 1.0
+    }
+
+    /// An AppKit location in window coordinates, converted to Godot's pixel space with a
+    /// flipped Y. Exposed so the conversion can be checked without synthesising events.
+    public func godotPosition(forLocationInWindow local: CGPoint) -> Vector2 {
+        let locationInView = convert(local, from: nil)
+        let scale = godotPixelScale
+        return Vector2(x: Float(locationInView.x * scale),
+                       y: Float((bounds.height - locationInView.y) * scale))
+    }
+
     func resizeWindow() {
         guard let embedded else { return }
-        let scale = renderingLayer?.contentsScale ?? 1.0
+        let scale = godotPixelScale
         let pixelWidth = Int32(max(1, self.bounds.size.width * scale))
         let pixelHeight = Int32(max(1, self.bounds.size.height * scale))
         let size = Vector2i(x: pixelWidth, y: pixelHeight)
@@ -139,11 +155,7 @@ public class GodotView: NSView {
         mb.buttonIndex = index == .left ? MouseButton.left : index == .right ? MouseButton.right : .none
 
         mb.pressed = pressed
-        let local = event.locationInWindow
-        let locationInView = convert(local, from: nil)
-
-        let vpos = Vector2(x: Float(locationInView.x),
-                           y: Float(bounds.height - locationInView.y))
+        let vpos = godotPosition(forLocationInWindow: event.locationInWindow)
         mb.globalPosition = vpos
         mb.position = vpos
 
