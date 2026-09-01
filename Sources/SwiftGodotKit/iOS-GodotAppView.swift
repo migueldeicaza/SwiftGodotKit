@@ -155,7 +155,13 @@ public class UIGodotAppView: UIView {
             let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
             DisplayServerAppleEmbeddedBridge.setNativeSurface(rendererNativeSurface)
             if !instance.isStarted() {
+                if app.isStartingEngine {
+                    app.queueStart(self)
+                    return
+                }
+                app.isStartingEngine = true
                 instance.start()
+                app.isStartingEngine = false
                 app.startPending()
             }
             if displayLink == nil {

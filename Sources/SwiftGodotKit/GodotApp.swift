@@ -85,6 +85,9 @@ public class GodotApp: ObservableObject {
     
     /// The Godot instance for this host, if it was successfully created
     @ObservationIgnored public var instance: GodotInstance?
+    /// Engine boot pumps the run loop; these keep re-entrant callers from booting twice.
+    @ObservationIgnored public private(set) var isCreatingInstance = false
+    @ObservationIgnored internal var isStartingEngine = false
     @ObservationIgnored public private(set) var isPaused = false
     @ObservationIgnored public private(set) var isDrawing = true
     @ObservationIgnored private var hostBridge: SwiftGodotHostBridge?
@@ -161,10 +164,12 @@ public class GodotApp: ObservableObject {
     public func startPending() {
         guard instance != nil else { return }
 
-        for view in pendingStart {
+        // Taken first: startGodotInstance can re-queue a view mid-drain.
+        let starting = pendingStart
+        pendingStart.removeAll()
+        for view in starting {
             view.startGodotInstance()
         }
-        pendingStart.removeAll()
 
         for view in pendingLayout {
 #if os(macOS)
@@ -186,6 +191,9 @@ public class GodotApp: ObservableObject {
             }
             return true
         }
+        if isCreatingInstance { return false }
+        isCreatingInstance = true
+        defer { isCreatingInstance = false }
 
         #if os(iOS)
         touches = [UITouch?](repeating: nil, count: maxTouchCount)
