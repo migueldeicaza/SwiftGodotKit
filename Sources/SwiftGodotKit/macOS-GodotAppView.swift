@@ -140,10 +140,22 @@ public class NSGodotAppView: GodotView {
             let alreadyStarted = instance.isStarted()
             print("[SwiftGodotKit] startGodotInstance after instance.isStarted() -> \(alreadyStarted)")
             if !alreadyStarted {
+                if app.engineStartFailed { return }
+                if app.isStartingEngine {
+                    app.queueStart(self)
+                    return
+                }
+                app.isStartingEngine = true
                 let started = instance.start()
+                app.isStartingEngine = false
                 Logger.App.info("startGodotInstance: instance.start() -> \(started)")
                 print("[SwiftGodotKit] startGodotInstance instance.start() -> \(started)")
                 stderrLog("startGodotInstance instance.start() -> \(started)")
+                guard started else {
+                    app.engineStartFailed = true
+                    return
+                }
+                app.startPending()
             }
             if app.displayDriver == "embedded", embedded == nil {
                 if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
