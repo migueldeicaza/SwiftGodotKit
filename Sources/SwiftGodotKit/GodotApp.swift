@@ -88,6 +88,8 @@ public class GodotApp: ObservableObject {
     /// Engine boot pumps the run loop; these keep re-entrant callers from booting twice.
     @ObservationIgnored public private(set) var isCreatingInstance = false
     @ObservationIgnored internal var isStartingEngine = false
+    /// A failed Main::setup2 leaves no way to retry; never start this instance again.
+    @ObservationIgnored internal var engineStartFailed = false
     @ObservationIgnored public private(set) var isPaused = false
     @ObservationIgnored public private(set) var isDrawing = true
     @ObservationIgnored private var hostBridge: SwiftGodotHostBridge?
