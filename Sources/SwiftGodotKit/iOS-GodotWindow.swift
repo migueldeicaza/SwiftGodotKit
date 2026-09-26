@@ -83,15 +83,16 @@ public class UIGodotWindow: UIView {
     
     func initGodotWindow() {
         guard let app else { return }
+        app.registerGodotWindow(self)
         if windowLayer == nil {
             commonInit()
         }
 
-        guard let instance = app.instance else {
+        guard app.instance != nil else {
             app.queueGodotWindow(self)
             return
         }
-        guard instance.isStarted() else {
+        guard app.isEngineRunning else {
             app.queueGodotWindow(self)
             return
         }
@@ -121,7 +122,9 @@ public class UIGodotWindow: UIView {
     }
     
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let windowLayer, let app, app.instance != nil else { return }
+        guard let windowLayer, let app, app.isEngineRunning else { return }
+        app.beginEngineOperation()
+        defer { app.endEngineOperation() }
         guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
@@ -148,7 +151,9 @@ public class UIGodotWindow: UIView {
     }
     
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let windowLayer, let app, app.instance != nil else { return }
+        guard let windowLayer, let app, app.isEngineRunning else { return }
+        app.beginEngineOperation()
+        defer { app.endEngineOperation() }
         guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
@@ -189,7 +194,9 @@ public class UIGodotWindow: UIView {
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let windowLayer, let app, app.instance != nil else { return }
+        guard let windowLayer, let app, app.isEngineRunning else { return }
+        app.beginEngineOperation()
+        defer { app.endEngineOperation() }
         guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
         let contentsScale = windowLayer.contentsScale
         var touchData: [[String : Any]] = []
@@ -216,7 +223,9 @@ public class UIGodotWindow: UIView {
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, app.instance != nil else { return }
+        guard let app, app.isEngineRunning else { return }
+        app.beginEngineOperation()
+        defer { app.endEngineOperation() }
         guard let windowId = targetWindowIdForInput(), let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { return }
 
         var touchData: [[String : Any]] = []
@@ -266,7 +275,15 @@ public class UIGodotWindow: UIView {
     public override func removeFromSuperview() {
         clearBinding(removeOwnedWindow: true)
         embedded = nil
+        app?.removePending(self)
         super.removeFromSuperview()
+    }
+
+    func engineWillStop() {
+        clearBinding(removeOwnedWindow: true)
+        embedded = nil
+        windowLayer?.removeFromSuperlayer()
+        windowLayer = nil
     }
 
     private func targetWindowIdForInput() -> Int32? {

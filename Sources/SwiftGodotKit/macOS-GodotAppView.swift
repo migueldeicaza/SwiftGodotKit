@@ -57,6 +57,9 @@ typealias TTGodotAppView = NSGodotAppView
 typealias TTGodotWindow = NSGodotWindow
 
 public class NSGodotAppView: GodotView {
+    var isAttachedForStartup: Bool { window != nil }
+    public override var canSendGodotInput: Bool { app?.isEngineRunning ?? false }
+    public override var godotAppForInput: GodotApp? { app }
     private var link : CADisplayLink? = nil
     private var frameCount: UInt64 = 0
     private var loggedSurfaceBinding = false
@@ -98,21 +101,19 @@ public class NSGodotAppView: GodotView {
             renderingLayer.frame = self.bounds
         }
         
-        if let app, let instance = app.instance {
-            if instance.isStarted() {
-                if app.displayDriver == "embedded" {
-                    if embedded == nil {
-                        if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
-                            embedded = displayServer
-                            logger.info("NSGodotAppView.layout created embedded display server")
-                            print("[SwiftGodotKit] NSGodotAppView.layout created embedded display server")
-                        } else {
-                            emitDisplayServerNotEmbeddedWarning(context: "layout")
-                        }
+        if let app, app.isEngineRunning {
+            if app.displayDriver == "embedded" {
+                if embedded == nil {
+                    if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                        embedded = displayServer
+                        logger.info("NSGodotAppView.layout created embedded display server")
+                        print("[SwiftGodotKit] NSGodotAppView.layout created embedded display server")
+                    } else {
+                        emitDisplayServerNotEmbeddedWarning(context: "layout")
                     }
-
-                    resizeWindow()
                 }
+
+                resizeWindow()
             }
         } else if let app {
             app.queueLayout(self)
@@ -122,50 +123,62 @@ public class NSGodotAppView: GodotView {
 
     func startGodotInstance() {
         syncCallbackRegistration()
-        if let app, let instance = app.instance {
-            if app.displayDriver == "embedded" {
-                guard let renderingLayer else {
-                    Logger.App.error("startGodotInstance: renderingLayer was nil")
-                    return
-                }
-                let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
-                DisplayServerEmbedded.setNativeSurface(rendererNativeSurface)
-                if !loggedSurfaceBinding {
-                    logger.info("Bound native surface layer=\(String(describing: renderingLayer), privacy: .public) size=\(String(describing: renderingLayer.drawableSize), privacy: .public)")
-                    print("[SwiftGodotKit] Bound native surface size=\(renderingLayer.drawableSize)")
-                    loggedSurfaceBinding = true
-                }
+        guard let app else { return }
+        app.beginEngineOperation()
+        defer { app.endEngineOperation() }
+        switch app.beginViewStartup(self) {
+        case .wait, .failed:
+            return
+        case .prepare:
+            guard prepareRenderingSurface() else {
+                _ = app.completeSurfacePreparation(for: self, succeeded: false)
+                return
             }
-            print("[SwiftGodotKit] startGodotInstance before instance.isStarted()")
-            let alreadyStarted = instance.isStarted()
-            print("[SwiftGodotKit] startGodotInstance after instance.isStarted() -> \(alreadyStarted)")
-            if !alreadyStarted {
-                let started = instance.start()
-                Logger.App.info("startGodotInstance: instance.start() -> \(started)")
-                print("[SwiftGodotKit] startGodotInstance instance.start() -> \(started)")
-                stderrLog("startGodotInstance instance.start() -> \(started)")
-            }
-            if app.displayDriver == "embedded", embedded == nil {
-                if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
-                    embedded = displayServer
-                    print("[SwiftGodotKit] startGodotInstance created embedded display server")
-                    stderrLog("startGodotInstance created embedded display server")
-                } else {
-                    emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
-                }
-            }
-            resizeWindow()
-            app.pollBridgeAndReadiness()
-            if link == nil {
-                let link = displayLink(target: self, selector: #selector(iterate(_:)))
-                link.add(to: .main, forMode: RunLoop.Mode.common)
-                self.link = link
-                print("[SwiftGodotKit] CADisplayLink installed")
-                stderrLog("CADisplayLink installed")
-            }
-        } else if let app {
-            app.queueStart(self)
+            guard app.completeSurfacePreparation(for: self, succeeded: true) else { return }
+        case .running:
+            guard prepareRenderingSurface() else { return }
+            app.runningViewDidBindSurface(self)
         }
+        if app.displayDriver == "embedded", embedded == nil {
+            if let displayServer = DisplayServer.shared as? DisplayServerEmbedded {
+                embedded = displayServer
+            } else {
+                emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
+            }
+        }
+        resizeWindow()
+        app.pollBridgeAndReadiness()
+        guard app.isEngineRunning else { return }
+        if link == nil {
+            let link = displayLink(target: self, selector: #selector(iterate(_:)))
+            link.add(to: .main, forMode: RunLoop.Mode.common)
+            self.link = link
+        }
+    }
+
+    private func prepareRenderingSurface() -> Bool {
+        guard app?.displayDriver == "embedded" else { return true }
+        guard let renderingLayer else {
+            Logger.App.error("startGodotInstance: renderingLayer was nil")
+            return false
+        }
+        let layer = Unmanaged.passUnretained(renderingLayer).toOpaque()
+        let surface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: layer))
+        DisplayServerEmbedded.setNativeSurface(surface)
+        if !loggedSurfaceBinding {
+            logger.info("Bound native surface layer=\(String(describing: renderingLayer), privacy: .public) size=\(String(describing: renderingLayer.drawableSize), privacy: .public)")
+            loggedSurfaceBinding = true
+        }
+        return true
+    }
+
+    func engineDidStop() {
+        link?.invalidate()
+        link = nil
+        embedded = nil
+        frameCount = 0
+        loggedSurfaceBinding = false
+        didEmitDisplayServerNotEmbeddedWarning = false
     }
     
     public override func viewDidMoveToSuperview() {
@@ -175,6 +188,7 @@ public class NSGodotAppView: GodotView {
             link = nil
             frameCount = 0
             unregisterCallbacks()
+            app?.removePending(self)
         }
     }
     public override func viewDidMoveToWindow() {
@@ -195,9 +209,9 @@ public class NSGodotAppView: GodotView {
         if let app, (app.isPaused || !app.isDrawing) {
             return
         }
-        if let instance = app?.instance, instance.isStarted() {
-            _ = instance.iteration()
-            app?.pollBridgeAndReadiness()
+        if let app, app.isEngineRunning, let instance = app.instance {
+            app.performEngineOperation { _ = instance.iteration() }
+            app.pollBridgeAndReadiness()
             frameCount += 1
             if frameCount == 1 || frameCount % 300 == 0 {
                 logger.info("NSGodotAppView.iterate frame=\(self.frameCount)")

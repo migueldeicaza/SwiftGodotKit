@@ -46,6 +46,17 @@ public class GodotView: NSView {
     open var windowId: Int {
         DisplayServer.mainWindowId
     }
+
+    open var canSendGodotInput: Bool { true }
+    open var godotAppForInput: GodotApp? { nil }
+
+    private func sendGodotInput(_ event: InputEvent) {
+        if let app = godotAppForInput {
+            app.performEngineOperation { Input.parseInputEvent(event) }
+        } else {
+            Input.parseInputEvent(event)
+        }
+    }
     
     public override var bounds: CGRect {
         didSet {
@@ -109,6 +120,7 @@ public class GodotView: NSView {
     }
     
     func processKeyEvent(event: NSEvent, pressed: Bool) {
+        guard canSendGodotInput else { return }
         let keyEvent = InputEventKey()
         keyEvent.windowId = windowId
         
@@ -127,7 +139,7 @@ public class GodotView: NSView {
         keyEvent.pressed = pressed
         keyEvent.location = GodotView.locationMap[event.keyCode] ?? .unspecified
 
-        Input.parseInputEvent(keyEvent)
+        sendGodotInput(keyEvent)
     }
     
     var mouseDownControl: Bool = false
@@ -150,6 +162,7 @@ public class GodotView: NSView {
     }
 
     func processEvent(event: NSEvent, index: MouseButton, pressed: Bool, outOfStream: Bool) {
+        guard canSendGodotInput else { return }
         let mb = InputEventMouseButton()
         mb.windowId = windowId
         mb.buttonIndex = index == .left ? MouseButton.left : index == .right ? MouseButton.right : .none
@@ -171,7 +184,7 @@ public class GodotView: NSView {
         if !outOfStream && index == .left && pressed {
             mb.doubleClick = event.clickCount == 2
         }
-        Input.parseInputEvent(mb)
+        sendGodotInput(mb)
     }
 
 }

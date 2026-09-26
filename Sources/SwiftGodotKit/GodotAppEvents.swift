@@ -14,6 +14,9 @@ public struct GodotStartupFailureEvent {
         case projectFileMissing
         case sceneMissing
         case instanceCreationFailed
+        case processBusy
+        case nativeProcessUnavailable
+        case engineStartFailed
     }
 
     public let reason: Reason

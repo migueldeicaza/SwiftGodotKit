@@ -25,11 +25,12 @@ This module contains a `TrivialSample` example code that shows both
 how to embed a Godot-packaged game (PCK files), as well as how to embed
 Godot UI elements are created programmatically.  This sample runs on macOS.
 
-### iOS Sample Code
+### macOS and iOS SwiftUI Sample
 
-`Samples/AxolotlDemo` is a SwiftUI container for macOS and iOS. It embeds the
-Save the Axolotl Godot project as `main.pck`. See the sample README for build
-and run instructions. The sample supports iOS devices and the iOS simulator.
+[AxolotlDemo](Samples/AxolotlDemo) is a SwiftUI container for macOS and iOS. It
+embeds the Save the Axolotl Godot project as `main.pck`. See the
+[sample README](Samples/AxolotlDemo/README.md) for build and run instructions.
+The sample supports macOS, iOS devices, and the iOS simulator.
 
 ## Using this
 
@@ -62,6 +63,24 @@ struct ContentView: View {
 ```
 
 There can only be one GodotApp in your application, but you can reference different scenes from it.
+
+### Startup and stop results
+
+`GodotApp.lifecycleState` reports startup state and updates SwiftUI views when
+it changes. A call to `stop()` before a rendering view attaches returns
+`.deferred`; `lifecycleState` then reports `.stopPending`. A later `start()`
+cancels that stop request.
+
+Lifecycle commands made from a background thread are queued on the main thread.
+`startResult()` and `stop()` return `.scheduled` in that case. A failed native
+creation or engine start is terminal for the process because the published
+libgodot binary does not report which setup steps completed. Restart the app
+process before another native startup attempt.
+
+`runOnGodotThread(async: false)` runs at once only when called on the main
+thread. From a background thread it queues the block on the main thread to
+avoid a deadlock. See [the release note](RELEASE_NOTES.md) before updating
+callers that use `async: false`.
 
 # Discussions
 
@@ -204,8 +223,8 @@ Run these from the adjacent `godot` checkout:
    make zip
    ```
    After this step `SwiftGodotKit/build/mac/libgodot.xcframework` and
-   `SwiftGodotKit/build/ios/libgodot.xcframework` exist and are picked up by
-   the manifest automatically. The zip files are created next to each
+   `SwiftGodotKit/build/ios/libgodot.xcframework` exist. The zip files are
+   created next to each
    xcframework as `libgodot-macos.xcframework.zip` and
    `libgodot-ios.xcframework.zip`.
 

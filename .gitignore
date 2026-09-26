@@ -1,5 +1,8 @@
 .DS_Store
 /.build
+/build/
+/Tests/ReentryFixture/Package.resolved
+/Tests/ReentryFixture/.build/
 /Packages
 xcuserdata/
 DerivedData/

@@ -30,6 +30,8 @@ public struct GodotWindow: NSViewRepresentable {
 }
 
 public class NSGodotWindow: GodotView {
+    public override var canSendGodotInput: Bool { app?.isEngineRunning ?? false }
+    public override var godotAppForInput: GodotApp? { app }
     private var subwindow: SwiftGodot.Window?
     private var boundWindowInstanceId: Int64?
     private var ownsSubwindow = false
@@ -53,11 +55,12 @@ public class NSGodotWindow: GodotView {
             return
         }
         guard let app else { return }
-        guard let instance = app.instance else {
+        app.registerGodotWindow(self)
+        guard app.instance != nil else {
             app.queueGodotWindow(self)
             return
         }
-        guard instance.isStarted() else {
+        guard app.isEngineRunning else {
             app.queueGodotWindow(self)
             return
         }
@@ -105,7 +108,13 @@ public class NSGodotWindow: GodotView {
     public override func removeFromSuperview() {
         clearBinding(removeOwnedWindow: true)
         embedded = nil
+        app?.removePending(self)
         super.removeFromSuperview()
+    }
+
+    func engineWillStop() {
+        clearBinding(removeOwnedWindow: true)
+        embedded = nil
     }
 
     private func bindNamedWindow(node: String, app: GodotApp) {

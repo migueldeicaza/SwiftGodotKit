@@ -36,7 +36,7 @@ public final class GodotAppViewHandle {
     }
 
     public func isReady() -> Bool {
-        guard let app, let instance = app.instance, instance.isStarted() else { return false }
+        guard let app, app.isEngineRunning else { return false }
         return getRoot() != nil
     }
 
@@ -61,18 +61,125 @@ private struct ViewCallback {
     var didSendReady = false
 }
 
+private final class WeakObject<Value: AnyObject> {
+    weak var value: Value?
+
+    init(_ value: Value) { self.value = value }
+}
+
+/// The result of asking `GodotApp` to create its native instance.
+/// Engine startup finishes later, after a view supplies a native surface.
+public enum GodotAppStartResult {
+    case created
+    case alreadyCreated
+    /// Creation, engine startup or a stop is in progress. The call cancels
+    /// a pending stop request. During a stop, the engine does not start
+    /// again when the stop completes. Call `start()` again after that.
+    case inProgress
+    case scheduled
+    case processBusy
+    case failed
+    case stopped
+}
+
+/// The result of a stop request. A deferred stop needs a successful engine
+/// start before the current libgodot binary can destroy its instance.
+public enum GodotAppStopResult {
+    case stopped
+    case deferred
+    case scheduled
+    case alreadyStopped
+    case startupFailed
+}
+
+/// The current state of the process-wide Godot lifecycle owned by this app.
+public enum GodotAppLifecycleState: Equatable {
+    case idle
+    case creating
+    case initialized
+    case stopPending
+    case preparingSurface
+    case starting
+    case running
+    case stopping
+    case failed
+}
+
+private final class LifecycleSnapshot {
+    private let lock = NSLock()
+    private var state: GodotAppLifecycleState = .idle
+    private var currentInstance: GodotInstance?
+    private var running = false
+    private var pendingStop = false
+
+    func publish(
+        state: GodotAppLifecycleState,
+        instance: GodotInstance?,
+        running: Bool,
+        pendingStop: Bool
+    ) {
+        lock.lock()
+        let previousInstance = currentInstance
+        self.state = state
+        currentInstance = instance
+        self.running = running
+        self.pendingStop = pendingStop
+        lock.unlock()
+        withExtendedLifetime(previousInstance) {}
+    }
+
+    func readState() -> GodotAppLifecycleState {
+        lock.lock()
+        defer { lock.unlock() }
+        return state
+    }
+
+    func readInstance() -> GodotInstance? {
+        lock.lock()
+        defer { lock.unlock() }
+        return currentInstance
+    }
+
+    func isRunning() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return running
+    }
+
+    func hasPendingStop() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return pendingStop
+    }
+}
+
 /// You create a single Godot App per application, this contains your game PCK
 @Observable
 public class GodotApp: ObservableObject {
+    @ObservationIgnored private static var processOwner: GodotApp?
+    @ObservationIgnored private static var nativeProcessUnavailable = false
+    @ObservationIgnored private var startup = StartupCoordinator<GodotInstance>()
+    @ObservationIgnored private let lifecycleSnapshot = LifecycleSnapshot()
+    private var lifecycleRevision: UInt64 = 0
+    @ObservationIgnored private var startupView: TTGodotAppView?
+    @ObservationIgnored private var stopRequested = false {
+        didSet {
+            if oldValue != stopRequested { publishLifecycle() }
+        }
+    }
+    @ObservationIgnored private var drainingStarts = false
+    @ObservationIgnored private var engineOperationDepth = 0
+    @ObservationIgnored private var knownViews: [ObjectIdentifier: WeakObject<TTGodotAppView>] = [:]
+    @ObservationIgnored private var knownWindows: [ObjectIdentifier: WeakObject<TTGodotWindow>] = [:]
     let path: String
     let renderingDriver: String
     let renderingMethod: String
     let displayDriver: String
     let extraArgs: [String]
     let maxTouchCount = 32
-    @ObservationIgnored var pendingStart = Set<TTGodotAppView>()
-    @ObservationIgnored var pendingLayout = Set<TTGodotAppView>()
-    @ObservationIgnored var pendingWindow = Set<TTGodotWindow>()
+    @ObservationIgnored private var pendingStart = SnapshotQueue<TTGodotAppView>()
+    @ObservationIgnored private var pendingLayout = SnapshotQueue<TTGodotAppView>()
+    @ObservationIgnored private var pendingWindow = SnapshotQueue<TTGodotWindow>()
 
     #if os(macOS)
     internal let appDelegate: GodotAppDelegate
@@ -83,13 +190,29 @@ public class GodotApp: ObservableObject {
     @ObservationIgnored private var lifecycleObservers: [NSObjectProtocol] = []
     #endif
     
-    /// The Godot instance for this host, if it was successfully created
-    @ObservationIgnored public var instance: GodotInstance?
+    /// The Godot instance for this host, if it was successfully created.
+    /// This getter does not wait for the main thread. Use the returned
+    /// instance on the main thread, and use `GodotApp` for lifecycle calls.
+    public var instance: GodotInstance? {
+        if Thread.isMainThread { _ = lifecycleRevision }
+        return lifecycleSnapshot.readInstance()
+    }
+    public var lifecycleState: GodotAppLifecycleState {
+        if Thread.isMainThread { _ = lifecycleRevision }
+        return lifecycleSnapshot.readState()
+    }
+    /// True when `stop()` will wait for startup or an active engine call.
+    public var isStopPending: Bool {
+        if Thread.isMainThread { _ = lifecycleRevision }
+        return lifecycleSnapshot.hasPendingStop()
+    }
+    var isEngineRunning: Bool { lifecycleSnapshot.isRunning() }
     @ObservationIgnored public private(set) var isPaused = false
     @ObservationIgnored public private(set) var isDrawing = true
     @ObservationIgnored private var hostBridge: SwiftGodotHostBridge?
     @ObservationIgnored private var callbacks: [UUID: ViewCallback] = [:]
     @ObservationIgnored private var runtimeEventHandlers: [UUID: (GodotAppEvent) -> Void] = [:]
+    @ObservationIgnored private let runtimeEventHandlersLock = NSLock()
     @ObservationIgnored private var launchSourceOverride: String?
     @ObservationIgnored private var launchSceneOverride: String?
     @ObservationIgnored private var nextViewId: Int64 = 1
@@ -152,6 +275,32 @@ public class GodotApp: ObservableObject {
             lifecycleIsPaused = false
         }
         #endif
+
+        startup.onPhaseChange = { [weak self] in
+            self?.publishLifecycle()
+        }
+    }
+
+    private func publishLifecycle() {
+        precondition(Thread.isMainThread)
+        let state: GodotAppLifecycleState
+        switch startup.phase {
+        case .idle: state = .idle
+        case .creating: state = .creating
+        case .initialized: state = stopRequested ? .stopPending : .initialized
+        case .preparing: state = .preparingSurface
+        case .starting: state = .starting
+        case .running: state = .running
+        case .stopping: state = .stopping
+        case .failed: state = .failed
+        }
+        lifecycleSnapshot.publish(
+            state: state,
+            instance: startup.instance,
+            running: startup.isRunning,
+            pendingStop: stopRequested
+        )
+        lifecycleRevision &+= 1
     }
 
     deinit {
@@ -164,33 +313,81 @@ public class GodotApp: ObservableObject {
     }
 
     public func startPending() {
-        guard instance != nil else { return }
-
-        for view in pendingStart {
-            view.startGodotInstance()
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.startPending() }
+            return
         }
-        pendingStart.removeAll()
+        guard instance != nil, !drainingStarts else { return }
+        drainingStarts = true
+        pendingStart.drain { view in
+            if view.app === self && view.isAttachedForStartup {
+                view.startGodotInstance()
+            }
+        }
+        drainingStarts = false
 
-        for view in pendingLayout {
+        guard isEngineRunning else { return }
+        performEngineOperation {
+            pendingLayout.drain { view in
+                guard view.app === self && view.isAttachedForStartup else { return }
 #if os(macOS)
-            view.needsLayout = true
+                view.needsLayout = true
 #else
-            view.setNeedsLayout()
+                view.setNeedsLayout()
 #endif
+            }
+            drainPendingWindows()
         }
-        pendingLayout.removeAll()
-
-        drainPendingWindows()
+        if !pendingStart.isEmpty {
+            DispatchQueue.main.async { [weak self] in self?.startPending() }
+        }
     }
 
+    /// Returns true when this call creates or finds an initialized instance.
+    /// A call made during startup or from a background thread returns false.
+    /// Use `startResult()` to distinguish queued work from a failure.
     @discardableResult
     public func start() -> Bool {
-        if instance != nil {
+        switch startResult() {
+        case .created, .alreadyCreated: return true
+        case .inProgress, .scheduled, .processBusy, .failed, .stopped: return false
+        }
+    }
+
+    /// Creates the native instance, or reports why it did not.
+    /// See `GodotAppStartResult` for the meaning of each result.
+    @discardableResult
+    public func startResult() -> GodotAppStartResult {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { _ = self.startResult() }
+            return .scheduled
+        }
+        switch startup.beginCreation() {
+        case .alreadyCreated:
+            stopRequested = false
             if isPaused {
                 resume()
             }
-            return true
+            return .alreadyCreated
+        case .inProgress:
+            stopRequested = false
+            return .inProgress
+        case .failed:
+            return .failed
+        case .create:
+            break
         }
+        if Self.nativeProcessUnavailable {
+            startup.completeCreation(nil)
+            emitStartupFailure(.nativeProcessUnavailable)
+            return .failed
+        }
+        if let owner = Self.processOwner, owner !== self {
+            startup.cancelCreation()
+            emitStartupFailure(.processBusy)
+            return .processBusy
+        }
+        Self.processOwner = self
 
         #if os(iOS)
         touches = [UITouch?](repeating: nil, count: maxTouchCount)
@@ -198,7 +395,10 @@ public class GodotApp: ObservableObject {
         let scene = normalizedScene(launchSceneOverride)
         let sourcePath = normalizedPath(launchSourceOverride) ?? path
         guard let startupSource = validateStartupSource(sourcePath: sourcePath, scene: scene) else {
-            return false
+            startup.cancelCreation()
+            releaseProcessOwnership()
+            stopRequested = false
+            return .failed
         }
 
         var args: [String] = []
@@ -234,19 +434,16 @@ public class GodotApp: ObservableObject {
 
         ensureHostBridgeTypeRegistration()
         
-        instance = GodotInstance.create(args: args)
-        guard let instance else {
+        let createdInstance = GodotInstance.create(args: args)
+        if createdInstance == nil { Self.nativeProcessUnavailable = true }
+        startup.completeCreation(createdInstance)
+        guard let instance = createdInstance else {
             Logger.App.error("GodotApp.start failed to create GodotInstance")
-            emitRuntimeEvent(
-                .startupFailure(
-                    GodotStartupFailureEvent(
-                        reason: .instanceCreationFailed,
-                        sourcePath: sourcePath,
-                        scene: scene
-                    )
-                )
-            )
-            return false
+            releaseProcessOwnership()
+            emitStartupFailure(.instanceCreationFailed)
+            clearPendingWork()
+            stopRequested = false
+            return .failed
         }
         isPaused = false
         Logger.App.info("GodotApp.start created instance. isStarted=\(instance.isStarted())")
@@ -256,50 +453,134 @@ public class GodotApp: ObservableObject {
 #endif
 
         startPending()
-        pollBridgeAndReadiness()
-        
-        return true
+        if startup.isFailed { return .failed }
+        if startup.isIdle { return .stopped }
+        return .created
     }
 
-    public func stop() {
-        guard let instance else { return }
+    /// Stops a running engine. A request during startup waits until startup
+    /// succeeds.
+    @discardableResult
+    public func stop() -> GodotAppStopResult {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { _ = self.stop() }
+            return .scheduled
+        }
+        if engineOperationDepth > 0 {
+            stopRequested = true
+            return .deferred
+        }
+        switch startup.beginStop() {
+        case .deferUntilReady, .needsEngineStart:
+            // Main::cleanup is unsafe before native engine startup completes.
+            stopRequested = true
+            return .deferred
+        case .alreadyStopped:
+            return .alreadyStopped
+        case .failed:
+            return .startupFailed
+        case .destroy(let instance):
+            destroyInstance(instance)
+            return .stopped
+        }
+    }
+
+    private func destroyInstance(_ instance: GodotInstance) {
         Logger.App.info("GodotApp.stop destroying GodotInstance")
         if hostBridge != nil {
             emitRuntimeEvent(.bridge(GodotBridgeEvent(state: .detached)))
         }
+        let windows = Array(knownWindows.values)
+        for window in windows { window.value?.engineWillStop() }
         GodotInstance.destroy(instance: instance)
-        self.instance = nil
+        let views = Array(knownViews.values)
+        for view in views { view.value?.engineDidStop() }
+        startupView?.engineDidStop()
+        clearPendingWork()
+        knownViews.removeAll()
+        knownWindows.removeAll()
+        for id in Array(callbacks.keys) {
+            guard var callback = callbacks[id] else { continue }
+            callback.didSendReady = false
+            callbacks[id] = callback
+        }
+        startupView = nil
+        stopRequested = false
         self.hostBridge = nil
         isPaused = false
         isDrawing = true
+        startup.finishStop()
+        releaseProcessOwnership()
+    }
+
+    private func releaseProcessOwnership() {
+        if Self.processOwner === self { Self.processOwner = nil }
+    }
+
+    private func clearPendingWork() {
+        pendingStart.removeAll()
+        pendingLayout.removeAll()
+        pendingWindow.removeAll()
+    }
+
+    private func emitStartupFailure(_ reason: GodotStartupFailureEvent.Reason) {
+        emitRuntimeEvent(.startupFailure(GodotStartupFailureEvent(
+            reason: reason,
+            sourcePath: normalizedPath(launchSourceOverride) ?? path,
+            scene: normalizedScene(launchSceneOverride)
+        )))
     }
 
     public func pause() {
-        guard let instance else { return }
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { self.pause() }
+            return
+        }
+        guard isEngineRunning, let instance else { return }
         if !isPaused {
-            instance.pause()
-            isPaused = true
+            performEngineOperation {
+                instance.pause()
+                isPaused = true
+            }
         }
     }
 
     public func resume() {
-        guard let instance else { return }
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { self.resume() }
+            return
+        }
+        guard isEngineRunning, let instance else { return }
         if isPaused {
-            instance.resume()
-            isPaused = false
+            performEngineOperation {
+                instance.resume()
+                isPaused = false
+            }
         }
     }
 
     public func startDrawing() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.startDrawing() }
+            return
+        }
         isDrawing = true
     }
 
     public func stopDrawing() {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.stopDrawing() }
+            return
+        }
         isDrawing = false
     }
 
+    /// Runs the block on the main thread when the engine is running.
+    /// From a background thread, this method queues the block and returns,
+    /// even when `async` is `false`. Do not read the block's result after
+    /// this method returns from a background thread.
     public func runOnGodotThread(async: Bool = true, _ block: @escaping () -> Void) {
-        guard let instance else {
+        guard instance != nil else {
             Logger.App.error("runOnGodotThread called before Godot instance was created")
             emitRuntimeEvent(
                 .warning(
@@ -311,11 +592,11 @@ public class GodotApp: ObservableObject {
             )
             return
         }
-        guard instance.isStarted() else { return }
+        guard isEngineRunning else { return }
 
         let invoke = { [weak self] in
-            guard let self, let instance = self.instance, instance.isStarted() else { return }
-            block()
+            guard let self, self.isEngineRunning else { return }
+            self.performEngineOperation(block)
         }
 
         if Thread.isMainThread {
@@ -323,11 +604,10 @@ public class GodotApp: ObservableObject {
             return
         }
 
-        if async {
-            DispatchQueue.main.async(execute: invoke)
-        } else {
-            DispatchQueue.main.sync(execute: invoke)
+        if !async {
+            Logger.App.warning("runOnGodotThread cannot run synchronously from a background thread; scheduling on the main thread")
         }
+        DispatchQueue.main.async(execute: invoke)
     }
 
     #if os(iOS)
@@ -370,13 +650,17 @@ public class GodotApp: ObservableObject {
     #endif
 
     func applicationDidBecomeActive() {
-        instance?.focusIn()
+        if isEngineRunning, let instance {
+            performEngineOperation { instance.focusIn() }
+        }
         resume()
         setApplicationFocus(true)
     }
 
     func applicationDidResignActive() {
-        instance?.focusOut()
+        if isEngineRunning, let instance {
+            performEngineOperation { instance.focusOut() }
+        }
         pause()
         setApplicationFocus(false)
     }
@@ -406,7 +690,7 @@ public class GodotApp: ObservableObject {
     }
 
     private func postMainLoopNotification(_ notification: Int32, label: String) {
-        guard let instance, instance.isStarted() else { return }
+        guard isEngineRunning else { return }
         emitRuntimeEvent(.lifecycle(GodotLifecycleEvent(label: label, notification: notification)))
         runOnGodotThread {
             Engine.getMainLoop()?.notification(what: notification)
@@ -414,24 +698,123 @@ public class GodotApp: ObservableObject {
         }
     }
 
+    enum ViewStartupAction {
+        case prepare
+        case running
+        case wait
+        case failed
+    }
+
+    func beginViewStartup(_ view: TTGodotAppView) -> ViewStartupAction {
+        precondition(Thread.isMainThread)
+        guard view.app === self else { return .failed }
+        knownViews[ObjectIdentifier(view)] = WeakObject(view)
+        guard view.isAttachedForStartup else {
+            queueStart(view)
+            return .wait
+        }
+        switch startup.beginViewStartup() {
+        case .prepare:
+            startupView = view // Retain the selected surface through native start.
+            return .prepare
+        case .running:
+            return .running
+        case .wait:
+            queueStart(view)
+            return .wait
+        case .failed:
+            return .failed
+        }
+    }
+
+    func completeSurfacePreparation(for view: TTGodotAppView, succeeded: Bool) -> Bool {
+        precondition(Thread.isMainThread)
+        guard startupView === view else { return false }
+        guard let instance = startup.finishSurfacePreparation(
+            succeeded: succeeded && view.isAttachedForStartup
+        ) else {
+            startupView = nil
+            return false
+        }
+
+        let started = instance.start()
+        if !started { Self.nativeProcessUnavailable = true }
+        startup.finishEngineStart(succeeded: started)
+        if !started {
+            Logger.App.error("GodotApp failed to start the engine")
+            // Keep the native wrapper alive. The published binary has no
+            // proven cleanup path after a failed engine start.
+            emitStartupFailure(.engineStartFailed)
+            clearPendingWork()
+            stopRequested = false
+            return false
+        }
+        if stopRequested {
+            stop()
+            return false
+        }
+        let viewIsAttached = view.isAttachedForStartup
+        if viewIsAttached { startupView = nil }
+        DispatchQueue.main.async { [weak self] in
+            self?.startPending()
+            self?.pollBridgeAndReadiness()
+        }
+        return viewIsAttached
+    }
+
+    func runningViewDidBindSurface(_ view: TTGodotAppView) {
+        guard isEngineRunning, view.isAttachedForStartup else { return }
+        if startupView !== view { startupView = nil }
+    }
+
     func queueStart(_ godotAppView: TTGodotAppView) {
+        guard !startup.isFailed else { return }
         pendingStart.insert(godotAppView)
     }
 
+    func removePending(_ godotAppView: TTGodotAppView) {
+        pendingStart.remove(godotAppView)
+        pendingLayout.remove(godotAppView)
+        knownViews.removeValue(forKey: ObjectIdentifier(godotAppView))
+        if startupView === godotAppView {
+            // Keep the selected view alive until the synchronous native call
+            // returns. A new view can bind its surface after that call.
+            return
+        }
+    }
+
     func queueLayout(_ godotAppView: TTGodotAppView) {
+        guard !startup.isFailed else { return }
         pendingLayout.insert(godotAppView)
     }
 
     func queueGodotWindow(_ godotWindow: TTGodotWindow) {
+        guard !startup.isFailed else { return }
+        knownWindows[ObjectIdentifier(godotWindow)] = WeakObject(godotWindow)
         pendingWindow.insert(godotWindow)
     }
 
+    func registerGodotWindow(_ godotWindow: TTGodotWindow) {
+        knownWindows[ObjectIdentifier(godotWindow)] = WeakObject(godotWindow)
+    }
+
+    func removePending(_ godotWindow: TTGodotWindow) {
+        pendingWindow.remove(godotWindow)
+        knownWindows.removeValue(forKey: ObjectIdentifier(godotWindow))
+    }
+
     public func configureLaunch(source: String? = nil, scene: String? = nil) {
-        if instance != nil {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async {
+                self.configureLaunch(source: source, scene: scene)
+            }
+            return
+        }
+        if !startup.isIdle {
             let normalizedSource = normalizedPath(source)
             let normalizedScene = normalizedScene(scene)
             if launchSourceOverride != normalizedSource || launchSceneOverride != normalizedScene {
-                Logger.App.error("Ignoring source/scene change because GodotApp is already started")
+                Logger.App.error("Ignoring source/scene change because Godot startup is active or failed")
             }
             return
         }
@@ -463,31 +846,25 @@ public class GodotApp: ObservableObject {
     @discardableResult
     public func registerEventHandler(_ handler: @escaping (GodotAppEvent) -> Void) -> UUID {
         let id = UUID()
-        if Thread.isMainThread {
-            runtimeEventHandlers[id] = handler
-        } else {
-            DispatchQueue.main.sync {
-                runtimeEventHandlers[id] = handler
-            }
-        }
+        runtimeEventHandlersLock.lock()
+        runtimeEventHandlers[id] = handler
+        runtimeEventHandlersLock.unlock()
         return id
     }
 
     public func unregisterEventHandler(_ id: UUID?) {
         guard let id else { return }
-        if Thread.isMainThread {
-            runtimeEventHandlers[id] = nil
-        } else {
-            DispatchQueue.main.sync {
-                runtimeEventHandlers[id] = nil
-            }
-        }
+        runtimeEventHandlersLock.lock()
+        runtimeEventHandlers[id] = nil
+        runtimeEventHandlersLock.unlock()
     }
 
     func emitRuntimeEvent(_ event: GodotAppEvent) {
         let dispatch = { [weak self] in
             guard let self else { return }
+            self.runtimeEventHandlersLock.lock()
             let handlers = Array(self.runtimeEventHandlers.values)
+            self.runtimeEventHandlersLock.unlock()
             guard !handlers.isEmpty else { return }
             for handler in handlers {
                 handler(event)
@@ -502,16 +879,37 @@ public class GodotApp: ObservableObject {
     }
 
     func pollBridgeAndReadiness() {
-        drainPendingWindows()
-        _ = ensureHostBridgeAttached()
-        notifyReadyIfPossible()
+        guard isEngineRunning else { return }
+        performEngineOperation {
+            drainPendingWindows()
+            _ = ensureHostBridgeAttached()
+            notifyReadyIfPossible()
+        }
+    }
+
+    @discardableResult
+    func performEngineOperation<Result>(_ body: () -> Result) -> Result {
+        beginEngineOperation()
+        defer { endEngineOperation() }
+        return body()
+    }
+
+    func beginEngineOperation() {
+        precondition(Thread.isMainThread)
+        engineOperationDepth += 1
+    }
+
+    func endEngineOperation() {
+        precondition(Thread.isMainThread && engineOperationDepth > 0)
+        engineOperationDepth -= 1
+        if engineOperationDepth == 0 && stopRequested && isEngineRunning {
+            stop()
+        }
     }
 
     private func drainPendingWindows() {
         guard !pendingWindow.isEmpty else { return }
-        let windows = pendingWindow
-        pendingWindow.removeAll()
-        for window in windows {
+        pendingWindow.drain { window in
             window.initGodotWindow()
         }
     }
@@ -537,8 +935,7 @@ public class GodotApp: ObservableObject {
         guard
             var callback = callbacks[id],
             !callback.didSendReady,
-            let instance,
-            instance.isStarted(),
+            isEngineRunning,
             let sceneTree = Engine.getMainLoop() as? SceneTree,
             sceneTree.root != nil
         else {
@@ -572,7 +969,7 @@ public class GodotApp: ObservableObject {
     }
 
     private func ensureHostBridgeAttached() -> SwiftGodotHostBridge? {
-        guard let instance, instance.isStarted() else { return nil }
+        guard isEngineRunning else { return nil }
         guard let sceneTree = Engine.getMainLoop() as? SceneTree, let root = sceneTree.root else {
             return nil
         }

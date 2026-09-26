@@ -64,6 +64,7 @@ typealias TTGodotAppView = UIGodotAppView
 typealias TTGodotWindow = UIGodotWindow
 
 public class UIGodotAppView: UIView {
+    var isAttachedForStartup: Bool { superview != nil }
     public var renderingLayer: CALayer? = nil
     private var displayLink : CADisplayLink? = nil
     private var didInitializeRenderingLayer = false
@@ -140,18 +141,16 @@ public class UIGodotAppView: UIView {
                 libgodot.libgodot_ios_layout_rendering_layer(layerPointer)
             }
         }
-        if let instance = app?.instance {
-            if instance.isStarted() {
-                if embedded == nil {
-                    if let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() {
-                        embedded = displayServer
-                    } else {
-                        emitDisplayServerNotEmbeddedWarning(context: "layoutSubviews")
-                    }
+        if let app, app.isEngineRunning {
+            if embedded == nil {
+                if let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() {
+                    embedded = displayServer
+                } else {
+                    emitDisplayServerNotEmbeddedWarning(context: "layoutSubviews")
                 }
-                if embedded != nil {
-                    resizeWindow()
-                }
+            }
+            if embedded != nil {
+                resizeWindow()
             }
         }
         super.layoutSubviews()
@@ -159,51 +158,68 @@ public class UIGodotAppView: UIView {
     
     func startGodotInstance() {
         syncCallbackRegistration()
-        guard let app else {
+        guard let app else { return }
+        app.beginEngineOperation()
+        defer { app.endEngineOperation() }
+        let action = app.beginViewStartup(self)
+        switch action {
+        case .wait, .failed:
             return
+        case .prepare, .running:
+            break
         }
         if renderingLayer == nil {
             commonInit()
         }
         guard let renderingLayer else {
             Logger.App.error("startGodotInstance: renderingLayer was nil")
+            if case .prepare = action {
+                _ = app.completeSurfacePreparation(for: self, succeeded: false)
+            }
             return
         }
-        if let instance = app.instance {
-            let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
-            if !didInitializeRenderingLayer {
-                libgodot.libgodot_ios_initialize_rendering_layer(layerPointer)
-                didInitializeRenderingLayer = true
-            }
-            let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
-            DisplayServerAppleEmbeddedBridge.setNativeSurface(rendererNativeSurface)
-            if !instance.isStarted() {
-                _ = instance.start()
-                app.startPending()
-            }
-            if displayLink == nil {
-                let displayLink = CADisplayLink(target: self, selector: #selector(iterate))
-                displayLink.add(to: .current, forMode: RunLoop.Mode.default)
-                self.displayLink = displayLink
-            }
-            if embedded == nil {
-                if let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() {
-                    embedded = displayServer
-                } else {
-                    emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
-                }
-            }
-            if embedded != nil {
-                resizeWindow()
-            }
-            app.pollBridgeAndReadiness()
-        } else {
-            app.queueStart(self)
+        let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
+        if !didInitializeRenderingLayer {
+            libgodot.libgodot_ios_initialize_rendering_layer(layerPointer)
+            didInitializeRenderingLayer = true
         }
+        let surface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: layerPointer))
+        DisplayServerAppleEmbeddedBridge.setNativeSurface(surface)
+        if case .prepare = action {
+            guard app.completeSurfacePreparation(for: self, succeeded: true) else { return }
+        } else {
+            app.runningViewDidBindSurface(self)
+        }
+        if displayLink == nil {
+            let displayLink = CADisplayLink(target: self, selector: #selector(iterate))
+            displayLink.add(to: .current, forMode: RunLoop.Mode.default)
+            self.displayLink = displayLink
+        }
+        if embedded == nil {
+            if let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() {
+                embedded = displayServer
+            } else {
+                emitDisplayServerNotEmbeddedWarning(context: "startGodotInstance")
+            }
+        }
+        if embedded != nil {
+            resizeWindow()
+        }
+        app.pollBridgeAndReadiness()
+    }
+
+    func engineDidStop() {
+        displayLink?.invalidate()
+        displayLink = nil
+        embedded = nil
+        renderingLayer?.removeFromSuperlayer()
+        renderingLayer = nil
+        didInitializeRenderingLayer = false
+        didEmitDisplayServerNotEmbeddedWarning = false
     }
 
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, app.instance != nil, let renderingLayer else { return }
+        guard let app, app.isEngineRunning, let renderingLayer else { return }
         let contentsScale = renderingLayer.contentsScale
         
         var touchData: [[String : Any]] = []
@@ -221,7 +237,7 @@ public class UIGodotAppView: UIView {
             let tapCount = touch.tapCount
             touchData.append([ "touchId": touchId, "location": location, "tapCount": tapCount ])
         }
-        {
+        app.performEngineOperation {
             let windowId = Int32(DisplayServer.mainWindowId)
             for touch in touchData {
                 guard let touchId = touch["touchId"] as? Int,
@@ -240,11 +256,11 @@ public class UIGodotAppView: UIView {
                     window: windowId
                 )
             }
-        }()
+        }
     }
     
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, let renderingLayer, app.instance != nil else { return }
+        guard let app, let renderingLayer, app.isEngineRunning else { return }
         let contentsScale = renderingLayer.contentsScale
         
         var touchData: [[String : Any]] = []
@@ -266,7 +282,7 @@ public class UIGodotAppView: UIView {
             touchData.append([ "touchId": touchId, "location": location, "prevLocation": prevLocation, "alt": alt, "azim": azim, "force": force, "maximumPossibleForce": maximumPossibleForce ])
         }
         
-        {
+        app.performEngineOperation {
             let windowId = Int32(DisplayServer.mainWindowId)
             for touch in touchData {
                 guard let touchId = touch["touchId"] as? Int,
@@ -279,11 +295,11 @@ public class UIGodotAppView: UIView {
                       let displayServer = DisplayServerAppleEmbeddedBridge.getSingleton() else { continue }
                 DisplayServerAppleEmbeddedBridge.touchDrag(displayServer, idx: Int32(touchId), prevX: Int32(prevLocation.x  * contentsScale), prevY: Int32(prevLocation.y  * contentsScale), x: Int32(location.x * contentsScale), y: Int32(location.y * contentsScale), pressure: Double(force) / Double(maximumPossibleForce), tilt: Vector2(x: Float(azim.dx) * Float(cos(alt)), y: Float(azim.dy) * cos(Float(alt))), window: windowId)
             }
-        }()
+        }
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, let renderingLayer, app.instance != nil else { return }
+        guard let app, let renderingLayer, app.isEngineRunning else { return }
         let contentsScale = renderingLayer.contentsScale
         
         var touchData: [[String : Any]] = []
@@ -299,7 +315,7 @@ public class UIGodotAppView: UIView {
             touchData.append([ "touchId": touchId, "location": location ])
         }
         
-        {
+        app.performEngineOperation {
             let windowId = Int32(DisplayServer.mainWindowId)
             for touch in touchData {
                 guard let touchId = touch["touchId"] as? Int,
@@ -315,11 +331,11 @@ public class UIGodotAppView: UIView {
                     window: windowId
                 )
             }
-        }()
+        }
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, app.instance != nil else { return }
+        guard let app, app.isEngineRunning else { return }
         var touchData: [[String : Any]] = []
         for touch in touches {
             let touchId = app.getTouchId(touch: touch)
@@ -330,7 +346,7 @@ public class UIGodotAppView: UIView {
             touchData.append([ "touchId": touchId ])
         }
         
-        {
+        app.performEngineOperation {
             let windowId = Int32(DisplayServer.mainWindowId)
             for touch in touchData {
                 guard let touchId = touch["touchId"] as? Int,
@@ -338,13 +354,14 @@ public class UIGodotAppView: UIView {
                 
                 DisplayServerAppleEmbeddedBridge.touchesCanceled(displayServer, idx: Int32(touchId), window: windowId)
             }
-        }()
+        }
     }
     
     public override func removeFromSuperview() {
         displayLink?.invalidate()
         displayLink = nil
         unregisterCallbacks()
+        app?.removePending(self)
         super.removeFromSuperview()
     }
     
@@ -363,16 +380,18 @@ public class UIGodotAppView: UIView {
         if let app, (app.isPaused || !app.isDrawing) {
             return
         }
-        if let instance = app?.instance, instance.isStarted() {
-            if let renderingLayer {
-                let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
-                libgodot.libgodot_ios_start_rendering_layer(layerPointer)
-                _ = instance.iteration()
-                libgodot.libgodot_ios_stop_rendering_layer(layerPointer)
-            } else {
-                _ = instance.iteration()
+        if let app, app.isEngineRunning, let instance = app.instance {
+            app.performEngineOperation {
+                if let renderingLayer {
+                    let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
+                    libgodot.libgodot_ios_start_rendering_layer(layerPointer)
+                    _ = instance.iteration()
+                    libgodot.libgodot_ios_stop_rendering_layer(layerPointer)
+                } else {
+                    _ = instance.iteration()
+                }
             }
-            app?.pollBridgeAndReadiness()
+            app.pollBridgeAndReadiness()
         }
     }
 }

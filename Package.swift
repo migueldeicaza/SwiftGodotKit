@@ -60,6 +60,11 @@ let package = Package(
             publicHeadersPath: "include"
         ),
 
+        .testTarget(
+            name: "SwiftGodotKitTests",
+            dependencies: ["SwiftGodotKit"]
+        ),
+
         macLibgodotTarget,
         iosLibgodotTarget,
         .systemLibrary(
