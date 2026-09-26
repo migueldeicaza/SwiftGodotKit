@@ -27,9 +27,12 @@ Godot UI elements are created programmatically.  This sample runs on macOS.
 
 ### iOS Sample Code
 
-`Samples/AxolotlDemo` is a SwiftUI container for macOS and iOS. It embeds the
-Save the Axolotl Godot project as `main.pck`. See the sample README for build
-and run instructions. The sample supports iOS devices and the iOS simulator.
+[`Samples/AxolotlDemo`](Samples/AxolotlDemo/README.md) is a SwiftUI container for
+macOS and iOS. It shows both directions of communication: a SwiftUI button
+calls Godot's `new_game()` method, and a Godot `score_changed` signal updates a
+SwiftUI score label. The sample includes a `main.pck` game pack and supports
+iOS devices and the iOS simulator. See the sample README for build and run
+instructions.
 
 ## Using this
 

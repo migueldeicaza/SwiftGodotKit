@@ -1,5 +1,7 @@
 extends Node
 
+signal score_changed(value: int)
+
 @export var mob_scene: PackedScene
 
 var score := 0
@@ -18,8 +20,12 @@ func game_over() -> void:
 
 
 func new_game() -> void:
+	$ScoreTimer.stop()
+	$MobTimer.stop()
+	$StartTimer.stop()
 	get_tree().call_group(&"mobs", &"queue_free")
 	score = 0
+	score_changed.emit(score)
 	$Player.start($StartPosition.position)
 	$StartTimer.start()
 	$HUD.update_score(score)
@@ -42,6 +48,7 @@ func _on_mob_timer_timeout() -> void:
 
 func _on_score_timer_timeout() -> void:
 	score += 1
+	score_changed.emit(score)
 	$HUD.update_score(score)
 
 
