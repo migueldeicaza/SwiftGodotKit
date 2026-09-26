@@ -1,0 +1,75 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://player.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://art/playerGrey_walk1.png" id="2_walk1"]
+[ext_resource type="Texture2D" path="res://art/playerGrey_walk2.png" id="3_walk2"]
+[ext_resource type="Texture2D" path="res://art/playerGrey_up1.png" id="4_up1"]
+[ext_resource type="Texture2D" path="res://art/playerGrey_up2.png" id="5_up2"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_walk1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_walk2")
+}],
+"loop": true,
+"name": &"right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_up1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_up2")
+}],
+"loop": true,
+"name": &"up",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player"]
+radius = 27.0
+height = 68.0
+
+[sub_resource type="Gradient" id="Gradient_trail"]
+colors = PackedColorArray(0.752941, 0.972549, 1, 0.7, 0.752941, 0.972549, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_trail"]
+gradient = SubResource("Gradient_trail")
+
+[sub_resource type="Curve" id="Curve_trail"]
+_data = [Vector2(0, 0.45), 0.0, 0.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_trail"]
+curve = SubResource("Curve_trail")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_trail"]
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_trail")
+color_ramp = SubResource("GradientTexture1D_trail")
+
+[node name="Player" type="Area2D"]
+z_index = 10
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"right"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_player")
+
+[node name="Trail" type="GPUParticles2D" parent="."]
+z_index = -1
+amount = 10
+texture = ExtResource("2_walk1")
+speed_scale = 2.0
+process_material = SubResource("ParticleProcessMaterial_trail")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -40,7 +40,7 @@ public struct GodotWindow: UIViewRepresentable {
 
 public class UIGodotWindow: UIView {
     public var windowLayer: CAMetalLayer?
-    private var embedded: DisplayServer?
+    private var embedded: DisplayServerAppleEmbeddedBridge.Handle?
     private var subwindow: SwiftGodot.Window?
     private var boundWindowInstanceId: Int64?
     

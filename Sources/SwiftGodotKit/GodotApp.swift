@@ -107,21 +107,26 @@ public class GodotApp: ObservableObject {
     ///  - godotPackPath: the directory where a scene can be created from, if it is not
     /// provided, this will try the `Bundle.main.resourcePath` directory, and if that is nil,
     /// then current "." directory will be used as the basis
-    ///  - renderingDriver: the name of the Godot driver to use, defaults to `vulkan`
-    ///  - renderingMethod: the Godot rendering method to use, defaults to `mobile`
+    ///  - renderingDriver: the name of the Godot driver to use. The default is `metal` on devices and macOS, and `opengl3` in the iOS Simulator.
+    ///  - renderingMethod: the Godot rendering method to use. The default is `mobile` on devices and macOS, and `gl_compatibility` in the iOS Simulator.
     ///  - displayDriver: the Godot display driver, defaults to `embedded`
     public init (
         packFile: String,
         godotPackPath: String? = nil,
-        renderingDriver: String = "metal",
-        renderingMethod: String = "mobile",
+        renderingDriver: String? = nil,
+        renderingMethod: String? = nil,
         displayDriver: String = "embedded",
         extraArgs: [String] = []
     ) {
         let dir = godotPackPath ?? Bundle.main.resourcePath ?? "."
         path = "\(dir)/\(packFile)"
-        self.renderingDriver = renderingDriver
-        self.renderingMethod = renderingMethod
+        #if os(iOS) && targetEnvironment(simulator)
+        self.renderingDriver = renderingDriver ?? "opengl3"
+        self.renderingMethod = renderingMethod ?? "gl_compatibility"
+        #else
+        self.renderingDriver = renderingDriver ?? "metal"
+        self.renderingMethod = renderingMethod ?? "mobile"
+        #endif
         self.displayDriver = displayDriver
         self.extraArgs = extraArgs
         

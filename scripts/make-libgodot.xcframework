@@ -115,9 +115,9 @@ build_godot_artifacts() {
     run_scons platform=macos arch=x86_64 target="$target" library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
 
     echo "Building iOS libgodot ($CONFIGURATION)..."
-    run_scons platform=ios arch=arm64 simulator=no target="$target" vulkan=no metal=yes disable_path_overrides=no
-    run_scons platform=ios arch=arm64 simulator=yes target="$target" vulkan=no metal=yes disable_path_overrides=no
-    run_scons platform=ios arch=x86_64 simulator=yes target="$target" vulkan=no metal=yes disable_path_overrides=no
+    run_scons platform=ios arch=arm64 simulator=no target="$target" library_type=static_library vulkan=no metal=yes disable_path_overrides=no
+    run_scons platform=ios arch=arm64 simulator=yes target="$target" library_type=static_library vulkan=no metal=yes disable_path_overrides=no
+    run_scons platform=ios arch=x86_64 simulator=yes target="$target" library_type=static_library vulkan=no metal=yes disable_path_overrides=no
 }
 
 select_artifacts() {
@@ -133,6 +133,47 @@ select_artifacts() {
         IOS_DEVICE_LIB="$IOS_ARM_DEBUG_LIB"
         IOS_SIM_ARM_LIB="$IOS_ARM_SIM_DEBUG_LIB"
         IOS_SIM_X86_LIB="$IOS_X86_SIM_DEBUG_LIB"
+    fi
+}
+
+verify_embeddable_ios_archive() {
+    local archive="$1"
+    local symbols
+    local members
+
+    if ! symbols="$(nm -gjU "$archive" 2>/dev/null)"; then
+        echo "error: could not inspect symbols in $archive" >&2
+        exit 1
+    fi
+
+    if grep -qx _main <<<"$symbols"; then
+        echo "error: $archive exports _main and cannot be embedded in an app" >&2
+        exit 1
+    fi
+
+    for symbol in \
+        _libgodot_create_godot_instance \
+        _libgodot_destroy_godot_instance \
+        _libgodot_ios_create_rendering_layer \
+        _libgodot_ios_initialize_rendering_layer \
+        _libgodot_ios_layout_rendering_layer \
+        _libgodot_ios_start_rendering_layer \
+        _libgodot_ios_stop_rendering_layer
+    do
+        if ! grep -qx "$symbol" <<<"$symbols"; then
+            echo "error: $archive is missing $symbol" >&2
+            exit 1
+        fi
+    done
+
+    if ! members="$(ar -t "$archive")"; then
+        echo "error: could not inspect archive members in $archive" >&2
+        exit 1
+    fi
+
+    if grep -Eq '(^|/)app\..*\.o$' <<<"$members"; then
+        echo "error: $archive contains the standalone app object" >&2
+        exit 1
     fi
 }
 
@@ -208,6 +249,14 @@ fi
 
 echo "Packaging iOS libgodot..."
 if [[ -f "$IOS_DEVICE_LIB" ]]; then
+    verify_embeddable_ios_archive "$IOS_DEVICE_LIB"
+    if [[ -f "$IOS_SIM_ARM_LIB" ]]; then
+        verify_embeddable_ios_archive "$IOS_SIM_ARM_LIB"
+    fi
+    if [[ -f "$IOS_SIM_X86_LIB" ]]; then
+        verify_embeddable_ios_archive "$IOS_SIM_X86_LIB"
+    fi
+
     if [[ -d "$OUTPUT_DIR/ios/libgodot.xcframework" ]]; then
         mv "$OUTPUT_DIR/ios/libgodot.xcframework" "$OUTPUT_DIR/ios/libgodot.xcframework.bak.$(date +%s)"
     fi
@@ -249,9 +298,9 @@ else
 Missing iOS libgodot static libraries.
 Build them first with:
     cd $GODOT_DIR
-    scons platform=ios arch=arm64 simulator=no target=template_$CONFIGURATION vulkan=no metal=yes disable_path_overrides=no
-    scons platform=ios arch=arm64 simulator=yes target=template_$CONFIGURATION vulkan=no metal=yes disable_path_overrides=no
-    scons platform=ios arch=x86_64 simulator=yes target=template_$CONFIGURATION vulkan=no metal=yes disable_path_overrides=no
+    scons platform=ios arch=arm64 simulator=no target=template_$CONFIGURATION library_type=static_library vulkan=no metal=yes disable_path_overrides=no
+    scons platform=ios arch=arm64 simulator=yes target=template_$CONFIGURATION library_type=static_library vulkan=no metal=yes disable_path_overrides=no
+    scons platform=ios arch=x86_64 simulator=yes target=template_$CONFIGURATION library_type=static_library vulkan=no metal=yes disable_path_overrides=no
 EOF
 fi
 

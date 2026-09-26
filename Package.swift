@@ -2,14 +2,14 @@
 import PackageDescription
 let macLibgodotTarget: Target = .binaryTarget(
     name: "mac_libgodot",
-    url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.4/libgodot-macos.xcframework.zip",
-    checksum: "2d8c2aaa336fe7c0f621f390c88ce9efb735f6b3c715657c1f665d26134db3a4"
+    url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.5/libgodot-macos.xcframework.zip",
+    checksum: "e3768a09b3bd0ecbc5024912da5d133d68d81b7087e508f897255da79f041af9"
 )
 
 let iosLibgodotTarget: Target = .binaryTarget(
     name: "ios_libgodot",
-    url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.4/libgodot-ios.xcframework.zip",
-    checksum: "c7b945aae1e02eabafa6578930e1ab3ac17cd1f8665ad3af4482447646d200c1"
+    url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.5/libgodot-ios.xcframework.zip",
+    checksum: "ce0dc9fc83afbca3d0860742de8fc2fa7db540d185c239dc6dde4969c62978e3"
 )
 
 let package = Package(
@@ -26,7 +26,7 @@ let package = Package(
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
     ],
     dependencies: [
-    		  // This is tag 0.75.0
+        // This revision is tag 0.75.0.
         .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "48112dd50fffe01f0af78e445a16991ecdc6bc94"),
     ],
     targets: [
@@ -46,15 +46,11 @@ let package = Package(
         .executableTarget(
             name: "TrivialSample",
             dependencies: ["SwiftGodotKit"],
-            
-            // This line does not seem to do anything in Xcode, so you need to manually
-            // copy main.pck and make it available from somwehere else
             resources: [
                 .copy("main.pck"),
-                .copy("main.tscn"),
-                .copy("project.godot"),
-                .copy(".godot"),
-                .copy("godot"),
+                .copy("AxolotlDemo-LICENSE.txt"),
+                .copy("THIRD_PARTY.md"),
+                .copy("Xolonium-OFL.txt"),
             ]
         ),
 

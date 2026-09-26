@@ -1,0 +1,88 @@
+name: AxolotlDemo
+
+options:
+  minimumXcodeGenVersion: 2.44.1
+
+packages:
+  SwiftGodotKit:
+    path: ../..
+
+targets:
+  AxolotlDemo-macOS:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: App
+      - path: Resources
+        buildPhase: resources
+      - path: GodotProject/LICENSE
+        buildPhase: resources
+      - path: GodotProject/THIRD_PARTY.md
+        buildPhase: resources
+      - path: GodotProject/fonts/LICENSE.txt
+        buildPhase: resources
+    dependencies:
+      - package: SwiftGodotKit
+        product: SwiftGodotKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.swiftgodotkit.axolotl.macos
+        PRODUCT_NAME: AxolotlDemo
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Axolotl Demo
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.games
+        MARKETING_VERSION: 1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: 5.0
+        OTHER_LDFLAGS: $(inherited) -ObjC
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+          - "@executable_path/../Frameworks"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        MACOSX_DEPLOYMENT_TARGET: 14.0
+    scheme:
+      gatherCoverageData: false
+
+  AxolotlDemo-iOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: App
+      - path: Resources
+        buildPhase: resources
+      - path: GodotProject/LICENSE
+        buildPhase: resources
+      - path: GodotProject/THIRD_PARTY.md
+        buildPhase: resources
+      - path: GodotProject/fonts/LICENSE.txt
+        buildPhase: resources
+    dependencies:
+      - package: SwiftGodotKit
+        product: SwiftGodotKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.swiftgodotkit.axolotl.ios
+        PRODUCT_NAME: AxolotlDemo
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Axolotl Demo
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        MARKETING_VERSION: 1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: 5.0
+        OTHER_LDFLAGS: $(inherited) -ObjC
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/Frameworks"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        IPHONEOS_DEPLOYMENT_TARGET: 17.0
+        TARGETED_DEVICE_FAMILY: 1,2
+    scheme:
+      gatherCoverageData: false

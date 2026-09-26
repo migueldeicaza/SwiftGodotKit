@@ -7,6 +7,7 @@
 //
 import SwiftUI
 import SwiftGodot
+import SwiftGodotKit
 
 #if os(macOS)
 import AppKit
@@ -31,11 +32,20 @@ struct testAppkitUIApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     #endif
+    @State private var godotApp = GodotApp(
+        packFile: "main.pck",
+        godotPackPath: Bundle.module.resourcePath
+    )
 
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        #if os(macOS)
+        Window("Axolotl Demo", id: "main") {
+            ContentView(app: godotApp)
         }
+        #else
+        WindowGroup {
+            ContentView(app: godotApp)
+        }
+        #endif
     }
 }
-

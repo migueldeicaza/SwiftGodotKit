@@ -19,7 +19,7 @@ out the `legacy` branch.
 
 ## Sample Code
 
-### MacOS Sample Code
+### macOS Sample Code
 
 This module contains a `TrivialSample` example code that shows both
 how to embed a Godot-packaged game (PCK files), as well as how to embed
@@ -27,10 +27,9 @@ Godot UI elements are created programmatically.  This sample runs on macOS.
 
 ### iOS Sample Code
 
-For iOS, you need a proper container; you can look at the peer
-[`SwiftGodotKitSamples`](https://github.com/migueldeicaza/SwiftGodotKitSamples) 
-project which hosts this library and a sample, and deploys to iOS devices (there 
-is no support for the iOS simulator, as Godot does not run on those).
+`Samples/AxolotlDemo` is a SwiftUI container for macOS and iOS. It embeds the
+Save the Axolotl Godot project as `main.pck`. See the sample README for build
+and run instructions. The sample supports iOS devices and the iOS simulator.
 
 ## Using this
 
@@ -193,11 +192,11 @@ Run these from the adjacent `godot` checkout:
    scons platform=macos arch=arm64 target=template_release library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
    scons platform=macos arch=x86_64 target=template_release library_type=shared_library vulkan=no metal=yes disable_path_overrides=no
    ```
-2. Build iOS static archives (release + simulator slices, Metal-only runtime)
+2. Build iOS static archives (device and simulator slices)
    ```
-   scons platform=ios arch=arm64 simulator=no target=template_release vulkan=no metal=yes disable_path_overrides=no
-   scons platform=ios arch=arm64 simulator=yes target=template_release vulkan=no metal=yes disable_path_overrides=no
-   scons platform=ios arch=x86_64 simulator=yes target=template_release vulkan=no metal=yes disable_path_overrides=no
+   scons platform=ios arch=arm64 simulator=no target=template_release library_type=static_library vulkan=no metal=yes disable_path_overrides=no
+   scons platform=ios arch=arm64 simulator=yes target=template_release library_type=static_library vulkan=no metal=yes disable_path_overrides=no
+   scons platform=ios arch=x86_64 simulator=yes target=template_release library_type=static_library vulkan=no metal=yes disable_path_overrides=no
    ```
 3. Package everything:
    ```

@@ -4,8 +4,10 @@
 //
 
 import OSLog
+import QuartzCore
 import SwiftUI
 import SwiftGodot
+import libgodot
 
 #if os(iOS)
 public struct GodotAppView: UIViewRepresentable {
@@ -62,10 +64,11 @@ typealias TTGodotAppView = UIGodotAppView
 typealias TTGodotWindow = UIGodotWindow
 
 public class UIGodotAppView: UIView {
-    public var renderingLayer: CAMetalLayer? = nil
+    public var renderingLayer: CALayer? = nil
     private var displayLink : CADisplayLink? = nil
+    private var didInitializeRenderingLayer = false
     
-    private var embedded: DisplayServer?
+    private var embedded: DisplayServerAppleEmbeddedBridge.Handle?
     private var callbackToken: UUID?
     private weak var callbackApp: GodotApp?
     private var didEmitDisplayServerNotEmbeddedWarning = false
@@ -85,7 +88,18 @@ public class UIGodotAppView: UIView {
     }
     
     private func commonInit() {
-        let renderingLayer = CAMetalLayer()
+        guard let app else {
+            Logger.App.error("commonInit: GodotApp was nil")
+            return
+        }
+        let layerPointer = app.renderingDriver.withCString {
+            libgodot.libgodot_ios_create_rendering_layer($0)
+        }
+        guard let layerPointer else {
+            Logger.App.error("commonInit: unsupported rendering driver \(app.renderingDriver, privacy: .public)")
+            return
+        }
+        let renderingLayer = Unmanaged<CALayer>.fromOpaque(layerPointer).takeRetainedValue()
         let size = max(UIScreen.main.bounds.size.width, UIScreen.main.bounds.size.height)
         renderingLayer.frame.size = CGSize(width: size, height: size)
         renderingLayer.contentsScale = self.contentScaleFactor
@@ -121,6 +135,10 @@ public class UIGodotAppView: UIView {
     public override func layoutSubviews() {
         if let renderingLayer {
             renderingLayer.frame = self.bounds
+            if didInitializeRenderingLayer {
+                let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
+                libgodot.libgodot_ios_layout_rendering_layer(layerPointer)
+            }
         }
         if let instance = app?.instance {
             if instance.isStarted() {
@@ -152,10 +170,15 @@ public class UIGodotAppView: UIView {
             return
         }
         if let instance = app.instance {
+            let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
+            if !didInitializeRenderingLayer {
+                libgodot.libgodot_ios_initialize_rendering_layer(layerPointer)
+                didInitializeRenderingLayer = true
+            }
             let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
             DisplayServerAppleEmbeddedBridge.setNativeSurface(rendererNativeSurface)
             if !instance.isStarted() {
-                instance.start()
+                _ = instance.start()
                 app.startPending()
             }
             if displayLink == nil {
@@ -180,17 +203,17 @@ public class UIGodotAppView: UIView {
     }
 
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, let instance = app.instance, let renderingLayer else { return }
+        guard let app, app.instance != nil, let renderingLayer else { return }
         let contentsScale = renderingLayer.contentsScale
         
         var touchData: [[String : Any]] = []
         for touch in touches {
-            let touchId = app.getTouchId(touch: touch)
-            if touchId == -1 {
+            var location = touch.location(in: self)
+            if !bounds.contains(location) {
                 continue
             }
-            var location = touch.location(in: self)
-            if !self.layer.frame.contains(location) {
+            let touchId = app.getTouchId(touch: touch)
+            if touchId == -1 {
                 continue
             }
             location.x -= renderingLayer.frame.origin.x
@@ -221,7 +244,7 @@ public class UIGodotAppView: UIView {
     }
     
     public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, let renderingLayer, let instance = app.instance else { return }
+        guard let app, let renderingLayer, app.instance != nil else { return }
         let contentsScale = renderingLayer.contentsScale
         
         var touchData: [[String : Any]] = []
@@ -231,15 +254,9 @@ public class UIGodotAppView: UIView {
                 continue
             }
             var location = touch.location(in: self)
-            if !self.layer.frame.contains(location) {
-                continue
-            }
             location.x -= renderingLayer.frame.origin.x
             location.y -= renderingLayer.frame.origin.y
             var prevLocation = touch.previousLocation(in: self)
-            if !self.layer.frame.contains(prevLocation) {
-                continue
-            }
             prevLocation.x -= renderingLayer.frame.origin.x
             prevLocation.y -= renderingLayer.frame.origin.y
             let alt = touch.altitudeAngle
@@ -266,7 +283,7 @@ public class UIGodotAppView: UIView {
     }
 
     public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, let renderingLayer, let instance = app.instance else { return }
+        guard let app, let renderingLayer, app.instance != nil else { return }
         let contentsScale = renderingLayer.contentsScale
         
         var touchData: [[String : Any]] = []
@@ -275,11 +292,8 @@ public class UIGodotAppView: UIView {
             if touchId == -1 {
                 continue
             }
-            app.removeTouchId(id: touchId)
             var location = touch.location(in: self)
-            if !self.layer.frame.contains(location) {
-                continue
-            }
+            app.removeTouchId(id: touchId)
             location.x -= renderingLayer.frame.origin.x
             location.y -= renderingLayer.frame.origin.y
             touchData.append([ "touchId": touchId, "location": location ])
@@ -305,7 +319,7 @@ public class UIGodotAppView: UIView {
     }
     
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let app, let instance = app.instance else { return }
+        guard let app, app.instance != nil else { return }
         var touchData: [[String : Any]] = []
         for touch in touches {
             let touchId = app.getTouchId(touch: touch)
@@ -350,7 +364,14 @@ public class UIGodotAppView: UIView {
             return
         }
         if let instance = app?.instance, instance.isStarted() {
-            instance.iteration()
+            if let renderingLayer {
+                let layerPointer = Unmanaged.passUnretained(renderingLayer).toOpaque()
+                libgodot.libgodot_ios_start_rendering_layer(layerPointer)
+                _ = instance.iteration()
+                libgodot.libgodot_ios_stop_rendering_layer(layerPointer)
+            } else {
+                _ = instance.iteration()
+            }
             app?.pollBridgeAndReadiness()
         }
     }

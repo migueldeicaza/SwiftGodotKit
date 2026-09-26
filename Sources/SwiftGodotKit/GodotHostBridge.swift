@@ -2,15 +2,12 @@ import Foundation
 import SwiftGodot
 @_implementationOnly import GDExtension
 
-@Godot
 final class SwiftGodotHostBridge: Node {
     static let nodeName = "__swiftgodotkit_bridge__"
 
-    @Signal var messageFromHost: SignalWithArguments<VariantDictionary>
     var onMessageToHost: ((VariantDictionary) -> Void)?
     private var lastHostViewId: Int64?
 
-    @Callable
     public func emitMessageToHost(message: VariantDictionary) {
         let payload = VariantDictionary(from: message)
         if !payload.has(key: Variant(BridgeRouting.viewIdKey)), let lastHostViewId {
@@ -21,7 +18,43 @@ final class SwiftGodotHostBridge: Node {
 
     public func receiveMessageFromHost(message: VariantDictionary) {
         lastHostViewId = BridgeRouting.routedViewId(from: message)
-        messageFromHost.emit(message)
+        _ = emitSignal("messageFromHost", Variant(message))
+    }
+
+    override public class var classInitializer: Void {
+        let _ = super.classInitializer
+        return initializeClass
+    }
+
+    private static let initializeClass: Void = {
+        let classInfo = ClassInfo<SwiftGodotHostBridge>(name: "SwiftGodotHostBridge")
+        let messageArgument = PropInfo(
+            propertyType: .dictionary,
+            propertyName: "message",
+            className: "",
+            hint: .none,
+            hintStr: "",
+            usage: .default
+        )
+        classInfo.registerSignal(name: "messageFromHost", arguments: [messageArgument])
+        classInfo.registerMethod(
+            name: "emitMessageToHost",
+            flags: .default,
+            returnValue: nil,
+            arguments: [messageArgument],
+            function: SwiftGodotHostBridge.emitMessageToHostFromGodot
+        )
+    }()
+
+    private func emitMessageToHostFromGodot(args: borrowing Arguments) -> Variant? {
+        guard let first = args.first,
+              let value = first,
+              let message = VariantDictionary(value)
+        else {
+            return nil
+        }
+        emitMessageToHost(message: message)
+        return nil
     }
 }
 

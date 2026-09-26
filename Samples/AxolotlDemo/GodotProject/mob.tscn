@@ -1,0 +1,67 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://mob.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://art/enemyFlyingAlt_1.png" id="2_fly1"]
+[ext_resource type="Texture2D" path="res://art/enemyFlyingAlt_2.png" id="3_fly2"]
+[ext_resource type="Texture2D" path="res://art/enemyWalking_1.png" id="4_walk1"]
+[ext_resource type="Texture2D" path="res://art/enemyWalking_2.png" id="5_walk2"]
+[ext_resource type="Texture2D" path="res://art/enemySwimming_1.png" id="6_swim1"]
+[ext_resource type="Texture2D" path="res://art/enemySwimming_2.png" id="7_swim2"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mob"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_fly1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_fly2")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_swim1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_swim2")
+}],
+"loop": true,
+"name": &"swim",
+"speed": 4.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_walk1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_walk2")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 4.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mob"]
+radius = 37.0
+height = 100.0
+
+[node name="Mob" type="RigidBody2D" groups=["mobs"]]
+collision_mask = 0
+gravity_scale = 0.0
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.75, 0.75)
+sprite_frames = SubResource("SpriteFrames_mob")
+animation = &"walk"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_mob")
+
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+
+[connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_exited"]

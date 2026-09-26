@@ -1,0 +1,522 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1F9E1E5C60D178D684D807E8 /* THIRD_PARTY.md in Resources */ = {isa = PBXBuildFile; fileRef = 9BEEF57876B34444F68A3263 /* THIRD_PARTY.md */; };
+		21068F6017C3D2CA1A6B2472 /* SwiftGodotKit in Frameworks */ = {isa = PBXBuildFile; productRef = FC13C60C08C836FD3D554300 /* SwiftGodotKit */; };
+		41FA448F0C62C9099E2B472C /* AxolotlDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F7BB28AD64DDAFF43CC065 /* AxolotlDemoApp.swift */; };
+		440C04B94E4032ABE2705FBE /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = D46157633689E857AE65D0D8 /* LICENSE.txt */; };
+		62EE2DDEDD35CC697A6026F6 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = E9EE0924599102BA5398E986 /* LICENSE */; };
+		848E2AC2A78ECAE201C4180C /* main.pck in Resources */ = {isa = PBXBuildFile; fileRef = A933C1E9895C4DEDF5E9D0EC /* main.pck */; };
+		9711778D1C51AA9C07B16709 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = E9EE0924599102BA5398E986 /* LICENSE */; };
+		9A422FEBA139479D82233EE8 /* SwiftGodotKit in Frameworks */ = {isa = PBXBuildFile; productRef = 01616E05DC3691D9B4F61E94 /* SwiftGodotKit */; };
+		D5DAB693398DA0BA013999D2 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = D46157633689E857AE65D0D8 /* LICENSE.txt */; };
+		D971837A237F19DA54C05D9E /* main.pck in Resources */ = {isa = PBXBuildFile; fileRef = A933C1E9895C4DEDF5E9D0EC /* main.pck */; };
+		DB7F3088609896552ED8CB0A /* AxolotlDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7F7BB28AD64DDAFF43CC065 /* AxolotlDemoApp.swift */; };
+		F816F354B0A9F434343EE638 /* THIRD_PARTY.md in Resources */ = {isa = PBXBuildFile; fileRef = 9BEEF57876B34444F68A3263 /* THIRD_PARTY.md */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		27836089F7686D4FF54B5311 /* AxolotlDemo-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AxolotlDemo-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		9BEEF57876B34444F68A3263 /* THIRD_PARTY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = THIRD_PARTY.md; sourceTree = "<group>"; };
+		A933C1E9895C4DEDF5E9D0EC /* main.pck */ = {isa = PBXFileReference; path = main.pck; sourceTree = "<group>"; };
+		D46157633689E857AE65D0D8 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		E9EE0924599102BA5398E986 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		F7F7BB28AD64DDAFF43CC065 /* AxolotlDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AxolotlDemoApp.swift; sourceTree = "<group>"; };
+		F88912C974310CC93501F4DC /* AxolotlDemo-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "AxolotlDemo-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9DBA48B82A6734BC5C47E91 /* SwiftGodotKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SwiftGodotKit; path = ../..; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		663111C9D0BD5719F4177CD1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A422FEBA139479D82233EE8 /* SwiftGodotKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D8C5D8C84DA092FC5A5B9221 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				21068F6017C3D2CA1A6B2472 /* SwiftGodotKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		07F9532BA29F3015AF337925 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A933C1E9895C4DEDF5E9D0EC /* main.pck */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		4742C26C7EB81F5E68ADB1BA /* GodotProject */ = {
+			isa = PBXGroup;
+			children = (
+				E9EE0924599102BA5398E986 /* LICENSE */,
+				9BEEF57876B34444F68A3263 /* THIRD_PARTY.md */,
+			);
+			path = GodotProject;
+			sourceTree = "<group>";
+		};
+		7AAC5A5866406878DB726FB5 = {
+			isa = PBXGroup;
+			children = (
+				C103CBB84A085DBAD0042D59 /* App */,
+				9FD888F033B8AFB3A0C7FA3B /* fonts */,
+				4742C26C7EB81F5E68ADB1BA /* GodotProject */,
+				87F9DAC03032065DDA910E0E /* Packages */,
+				07F9532BA29F3015AF337925 /* Resources */,
+				D6FD747A9E3B4E2CAD2DB69C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		87F9DAC03032065DDA910E0E /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				F9DBA48B82A6734BC5C47E91 /* SwiftGodotKit */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		9FD888F033B8AFB3A0C7FA3B /* fonts */ = {
+			isa = PBXGroup;
+			children = (
+				D46157633689E857AE65D0D8 /* LICENSE.txt */,
+			);
+			name = fonts;
+			path = GodotProject/fonts;
+			sourceTree = "<group>";
+		};
+		C103CBB84A085DBAD0042D59 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F7F7BB28AD64DDAFF43CC065 /* AxolotlDemoApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		D6FD747A9E3B4E2CAD2DB69C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F88912C974310CC93501F4DC /* AxolotlDemo-iOS.app */,
+				27836089F7686D4FF54B5311 /* AxolotlDemo-macOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		72DF377A0548EE9E905FE99D /* AxolotlDemo-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B3C91D5F416AFC7FD6B0277 /* Build configuration list for PBXNativeTarget "AxolotlDemo-iOS" */;
+			buildPhases = (
+				3AFD4EB17E8D6688286832A5 /* Sources */,
+				CB5BBF8082C273089534FED6 /* Resources */,
+				663111C9D0BD5719F4177CD1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "AxolotlDemo-iOS";
+			packageProductDependencies = (
+				01616E05DC3691D9B4F61E94 /* SwiftGodotKit */,
+			);
+			productName = "AxolotlDemo-iOS";
+			productReference = F88912C974310CC93501F4DC /* AxolotlDemo-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E0D48F171456F522915E0FE3 /* AxolotlDemo-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B9BBC24A45B1EA50AB745190 /* Build configuration list for PBXNativeTarget "AxolotlDemo-macOS" */;
+			buildPhases = (
+				7A4A27BDF9959710E51DAA8B /* Sources */,
+				5F4195FE058E2D5E28AC431C /* Resources */,
+				D8C5D8C84DA092FC5A5B9221 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "AxolotlDemo-macOS";
+			packageProductDependencies = (
+				FC13C60C08C836FD3D554300 /* SwiftGodotKit */,
+			);
+			productName = "AxolotlDemo-macOS";
+			productReference = 27836089F7686D4FF54B5311 /* AxolotlDemo-macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E3C57AEF72675FBC564F9B9D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					72DF377A0548EE9E905FE99D = {
+						ProvisioningStyle = Automatic;
+					};
+					E0D48F171456F522915E0FE3 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 2CFCA517A3B31C3513DB0748 /* Build configuration list for PBXProject "AxolotlDemo" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7AAC5A5866406878DB726FB5;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4F56E8F6083FB5EE7C519049 /* XCLocalSwiftPackageReference "../.." */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				72DF377A0548EE9E905FE99D /* AxolotlDemo-iOS */,
+				E0D48F171456F522915E0FE3 /* AxolotlDemo-macOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5F4195FE058E2D5E28AC431C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9711778D1C51AA9C07B16709 /* LICENSE in Resources */,
+				D5DAB693398DA0BA013999D2 /* LICENSE.txt in Resources */,
+				F816F354B0A9F434343EE638 /* THIRD_PARTY.md in Resources */,
+				D971837A237F19DA54C05D9E /* main.pck in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CB5BBF8082C273089534FED6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				62EE2DDEDD35CC697A6026F6 /* LICENSE in Resources */,
+				440C04B94E4032ABE2705FBE /* LICENSE.txt in Resources */,
+				1F9E1E5C60D178D684D807E8 /* THIRD_PARTY.md in Resources */,
+				848E2AC2A78ECAE201C4180C /* main.pck in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3AFD4EB17E8D6688286832A5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB7F3088609896552ED8CB0A /* AxolotlDemoApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A4A27BDF9959710E51DAA8B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				41FA448F0C62C9099E2B472C /* AxolotlDemoApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2EC90CC283E04D2EE7E63CE6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		A144152FAAE5BB8203851B6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Axolotl Demo";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.swiftgodotkit.axolotl.ios;
+				PRODUCT_NAME = AxolotlDemo;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		AC6921111CD3A3DCF4713203 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Axolotl Demo";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.swiftgodotkit.axolotl.macos;
+				PRODUCT_NAME = AxolotlDemo;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B4213CD9B58D9657B41DDCD6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Axolotl Demo";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.swiftgodotkit.axolotl.macos;
+				PRODUCT_NAME = AxolotlDemo;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C42E62BA9F078126D7501B22 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		EFD6880BBC427F246AA99009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Axolotl Demo";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.swiftgodotkit.axolotl.ios;
+				PRODUCT_NAME = AxolotlDemo;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2CFCA517A3B31C3513DB0748 /* Build configuration list for PBXProject "AxolotlDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2EC90CC283E04D2EE7E63CE6 /* Debug */,
+				C42E62BA9F078126D7501B22 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6B3C91D5F416AFC7FD6B0277 /* Build configuration list for PBXNativeTarget "AxolotlDemo-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EFD6880BBC427F246AA99009 /* Debug */,
+				A144152FAAE5BB8203851B6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B9BBC24A45B1EA50AB745190 /* Build configuration list for PBXNativeTarget "AxolotlDemo-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC6921111CD3A3DCF4713203 /* Debug */,
+				B4213CD9B58D9657B41DDCD6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		4F56E8F6083FB5EE7C519049 /* XCLocalSwiftPackageReference "../.." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		01616E05DC3691D9B4F61E94 /* SwiftGodotKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftGodotKit;
+		};
+		FC13C60C08C836FD3D554300 /* SwiftGodotKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftGodotKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E3C57AEF72675FBC564F9B9D /* Project object */;
+}
