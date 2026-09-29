@@ -79,12 +79,18 @@ This branch uses the
 macOS and iOS payloads. `Package.swift` pins the matching SwiftGodot commit.
 SwiftPM downloads the binaries when it builds the package.
 
+SwiftGodotKit pins SwiftGodot's `unify/main` commit for its Godot 4.7 API.
+SwiftGodot's `main` currently contains the Godot 4.6 API. Kit calls its
+custom surface and display methods through cached GDExtension method binds,
+so those methods do not need generated SwiftGodot classes. The pin can move
+to `main` after its generated API moves to Godot 4.7.
+
 ### Rebuild the payloads locally
 
 Keep these three checkouts next to each other:
 
 - `godot`: branch `swiftgodotkit-4.7`, based on `upstream/4.7`.
-- `SwiftGodot`: branch `swiftgodotkit-4.7`, based on `origin/unify/main`.
+- `SwiftGodot`: the pinned `unify/main` commit in `Package.swift`.
 - `SwiftGodotKit`: branch `swiftgodotkit-4.7`.
 
 To reproduce the payloads, build the engine archives and XCFrameworks:
@@ -118,7 +124,7 @@ make build-ios-simulator
 The sample pack script uses `/Applications/Godot-47.app`. Set `GODOT_APP` if
 you keep the Godot 4.7 editor at a different path.
 
-For the next payload release, push the matching Godot and SwiftGodot commits.
+For the next payload release, push the matching Godot commit.
 Then run `make publish-release VERSION=<new tag>` from `scripts/`. This uploads
 the two zip files to a Godot release and updates the binary URLs and checksums
 in `Package.swift`. Set `RELEASE_PRERELEASE=1` for a prerelease. Update the

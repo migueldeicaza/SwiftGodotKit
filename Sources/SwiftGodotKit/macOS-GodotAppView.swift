@@ -102,7 +102,7 @@ public class NSGodotAppView: GodotView {
             if instance.isStarted() {
                 if app.displayDriver == "embedded" {
                     if embedded == nil {
-                        if let displayServer = DisplayServer.shared as? DisplayServerMacOSEmbedded {
+                        if let displayServer = DisplayServerMacOSEmbeddedBridge.current() {
                             embedded = displayServer
                             logger.info("NSGodotAppView.layout created embedded display server")
                             print("[SwiftGodotKit] NSGodotAppView.layout created embedded display server")
@@ -128,8 +128,11 @@ public class NSGodotAppView: GodotView {
                     Logger.App.error("startGodotInstance: renderingLayer was nil")
                     return
                 }
-                let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
-                DisplayServerMacOSEmbedded.setNativeSurface(rendererNativeSurface)
+                guard let rendererNativeSurface = AppleNativeSurfaceBridge.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque())),
+                      DisplayServerMacOSEmbeddedBridge.setNativeSurface(rendererNativeSurface) else {
+                    Logger.App.error("startGodotInstance: native surface binding failed")
+                    return
+                }
                 if !loggedSurfaceBinding {
                     logger.info("Bound native surface layer=\(String(describing: renderingLayer), privacy: .public) size=\(String(describing: renderingLayer.drawableSize), privacy: .public)")
                     print("[SwiftGodotKit] Bound native surface size=\(renderingLayer.drawableSize)")
@@ -146,7 +149,7 @@ public class NSGodotAppView: GodotView {
                 stderrLog("startGodotInstance instance.start() -> \(started)")
             }
             if app.displayDriver == "embedded", embedded == nil {
-                if let displayServer = DisplayServer.shared as? DisplayServerMacOSEmbedded {
+                if let displayServer = DisplayServerMacOSEmbeddedBridge.current() {
                     embedded = displayServer
                     print("[SwiftGodotKit] startGodotInstance created embedded display server")
                     stderrLog("startGodotInstance created embedded display server")

@@ -29,7 +29,7 @@ enum DisplayServerAppleEmbeddedBridge {
     }
 
     @discardableResult
-    static func setNativeSurface(_ nativeSurface: RenderingNativeSurface?) -> Bool {
+    static func setNativeSurface(_ nativeSurface: RefCounted?) -> Bool {
         guard let method = methodSetNativeSurface else { return false }
         withUnsafePointer(to: nativeSurface?.handle) { pArg0 in
             let args: [UnsafeRawPointer?] = [UnsafeRawPointer(pArg0)]
@@ -50,6 +50,7 @@ enum DisplayServerAppleEmbeddedBridge {
     @discardableResult
     static func resizeWindow(_ displayServer: Handle?, size: Vector2i, id: Int32) -> Bool {
         guard let method = methodResizeWindow, let displayServer else { return false }
+        let id = Int64(id)
         withUnsafePointer(to: size) { pArg0 in
             withUnsafePointer(to: id) { pArg1 in
                 let args: [UnsafeRawPointer?] = [UnsafeRawPointer(pArg0), UnsafeRawPointer(pArg1)]
@@ -72,6 +73,10 @@ enum DisplayServerAppleEmbeddedBridge {
         window: Int32
     ) -> Bool {
         guard let method = methodTouchPress, let displayServer else { return false }
+        let idx = Int64(idx)
+        let x = Int64(x)
+        let y = Int64(y)
+        let window = Int64(window)
         withUnsafePointer(to: idx) { pArg0 in
             withUnsafePointer(to: x) { pArg1 in
                 withUnsafePointer(to: y) { pArg2 in
@@ -111,6 +116,12 @@ enum DisplayServerAppleEmbeddedBridge {
         window: Int32
     ) -> Bool {
         guard let method = methodTouchDrag, let displayServer else { return false }
+        let idx = Int64(idx)
+        let prevX = Int64(prevX)
+        let prevY = Int64(prevY)
+        let x = Int64(x)
+        let y = Int64(y)
+        let window = Int64(window)
         withUnsafePointer(to: idx) { pArg0 in
             withUnsafePointer(to: prevX) { pArg1 in
                 withUnsafePointer(to: prevY) { pArg2 in
@@ -146,6 +157,8 @@ enum DisplayServerAppleEmbeddedBridge {
     @discardableResult
     static func touchesCanceled(_ displayServer: Handle?, idx: Int32, window: Int32) -> Bool {
         guard let method = methodTouchesCanceled, let displayServer else { return false }
+        let idx = Int64(idx)
+        let window = Int64(window)
         withUnsafePointer(to: idx) { pArg0 in
             withUnsafePointer(to: window) { pArg1 in
                 let args: [UnsafeRawPointer?] = [UnsafeRawPointer(pArg0), UnsafeRawPointer(pArg1)]

@@ -175,8 +175,11 @@ public class UIGodotAppView: UIView {
                 libgodot.libgodot_ios_initialize_rendering_layer(layerPointer)
                 didInitializeRenderingLayer = true
             }
-            let rendererNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque()))
-            DisplayServerAppleEmbeddedBridge.setNativeSurface(rendererNativeSurface)
+            guard let rendererNativeSurface = AppleNativeSurfaceBridge.create(layer: UInt(bitPattern: Unmanaged.passUnretained(renderingLayer).toOpaque())),
+                  DisplayServerAppleEmbeddedBridge.setNativeSurface(rendererNativeSurface) else {
+                Logger.App.error("startGodotInstance: native surface binding failed")
+                return
+            }
             if !instance.isStarted() {
                 _ = instance.start()
                 app.startPending()

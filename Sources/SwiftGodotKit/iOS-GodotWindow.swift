@@ -337,16 +337,15 @@ public class UIGodotWindow: UIView {
         }
 
         let setNativeSurfaceMethod = StringName("set_native_surface")
-        if window.hasMethod(setNativeSurfaceMethod) {
-            let windowNativeSurface = RenderingNativeSurfaceApple.create(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()))
-            window.setNativeSurface(windowNativeSurface)
-        } else if !didLogMissingSetNativeSurface {
-            Logger.Window.error("attach(window:): Window is missing set_native_surface in this runtime; skipping native surface binding")
+        if !window.hasMethod(setNativeSurfaceMethod) ||
+            !AppleNativeSurfaceBridge.bindWindow(layer: UInt(bitPattern: Unmanaged.passUnretained(windowLayer).toOpaque()), to: window),
+            !didLogMissingSetNativeSurface {
+            Logger.Window.error("attach(window:): native surface binding is unavailable in this runtime")
             app?.emitRuntimeEvent(
                 .warning(
                     GodotWarningEvent(
                         code: .windowNativeSurfaceUnsupported,
-                        detail: "Window is missing set_native_surface; skipping native surface binding"
+                        detail: "Native surface binding is unavailable"
                     )
                 )
             )

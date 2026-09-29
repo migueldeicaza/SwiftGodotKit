@@ -13,7 +13,7 @@ public class GodotView: NSView {
     static var locationMap: [UInt16: KeyLocation] = initLocationMap()
     
     public var renderingLayer: CAMetalLayer? = nil
-    internal var embedded: DisplayServerMacOSEmbedded?
+    internal var embedded: DisplayServer?
     private var lastResizeSize: Vector2i?
     
     override init(frame: CGRect) {
@@ -90,10 +90,7 @@ public class GodotView: NSView {
             lastResizeSize = size
         }
 
-        embedded.resizeWindow(
-            size: size,
-            id: Int32(windowId)
-        )
+        DisplayServerMacOSEmbeddedBridge.resizeWindow(embedded, size: size, id: Int32(windowId))
     }
 
     public override var acceptsFirstResponder: Bool {
