@@ -1,6 +1,6 @@
 # Axolotl SwiftUI sample
 
-This sample embeds a Godot 4.6 game in a SwiftUI container. It has explicit macOS
+This sample embeds a Godot 4.7 game in a SwiftUI container. It has explicit macOS
 14 and iOS 17 targets. Both targets consume the local SwiftGodotKit package and
 the binary targets declared by that package.
 
@@ -35,8 +35,8 @@ To regenerate the pack and Xcode project:
 make
 ```
 
-The pack script uses `/Applications/Godot-46.app` by default. Set `GODOT_APP`
-to use a different Godot 4.6 application bundle.
+The pack script uses `/Applications/Godot-47.app` by default. Set `GODOT_APP`
+to use a different Godot 4.7 application bundle.
 
 Build both destinations:
 

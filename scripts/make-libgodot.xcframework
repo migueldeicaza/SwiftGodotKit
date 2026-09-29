@@ -78,6 +78,7 @@ fi
 
 SWIFTGODOT_DIR="$(cd "$1" && pwd)"
 GODOT_DIR="$(cd "$2" && pwd)"
+mkdir -p "$3"
 OUTPUT_DIR="$(cd "$3" && pwd)"
 
 case "$CONFIGURATION" in
@@ -103,7 +104,7 @@ IOS_X86_SIM_DEBUG_LIB="$GODOT_DIR/bin/libgodot.ios.template_debug.x86_64.simulat
 run_scons() {
     (
         cd "$GODOT_DIR"
-        scons "$@" "-j$JOBS"
+        scons "$@" accesskit=no angle=no "-j$JOBS"
     )
 }
 

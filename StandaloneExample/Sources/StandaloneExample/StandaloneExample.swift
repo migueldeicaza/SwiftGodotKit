@@ -17,7 +17,7 @@ class SpinningCube: Node3D {
 
 private func loadScene(scene: SceneTree) {
     let rootNodeName = StringName("__standalone_example_root__")
-    if scene.root?.findChild(pattern: rootNodeName.description, recursive: false, owned: false) != nil {
+    if scene.root.findChild(pattern: rootNodeName.description, recursive: false, owned: false) != nil {
         return
     }
 
@@ -38,7 +38,7 @@ private func loadScene(scene: SceneTree) {
     rootNode.addChild(node: makeCube(Vector3(x: 1, y: 1, z: 1)))
     rootNode.addChild(node: makeCube(Vector3(x: -1, y: -1, z: -1)))
     rootNode.addChild(node: makeCube(Vector3(x: 0, y: 1, z: 1)))
-    scene.root?.addChild(node: rootNode)
+    scene.root.addChild(node: rootNode)
 }
 
 struct ContentView: View {

@@ -63,7 +63,7 @@ extension GodotInstance {
             })
         })
         if let instance {
-            return getOrInitSwiftObject(nativeHandle: instance, ownsRef: false)
+            return getOrInitSwiftObject(nativeHandle: instance, ownership: .borrowed)
         }
         return nil
     }

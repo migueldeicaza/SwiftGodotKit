@@ -20,7 +20,7 @@ zip:
 	bash -x make-libgodot.xcframework --configuration release --zip $(SWIFTGODOT) $(GODOT) $(OUTPUT)
 
 check-version:
-	@test -n "$(VERSION)" || (echo "usage: make publish-release VERSION=v4.6.x"; exit 1)
+	@test -n "$(VERSION)" || (echo "usage: make publish-release VERSION=v4.7.x"; exit 1)
 
 publish-release: check-version
 	bash -x publish-libgodot-release "$(VERSION)" "$(GODOT)" "$(OUTPUT)" ../Package.swift "$(GODOT_REPO)"

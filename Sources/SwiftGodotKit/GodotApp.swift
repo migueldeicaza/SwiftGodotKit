@@ -539,8 +539,7 @@ public class GodotApp: ObservableObject {
             !callback.didSendReady,
             let instance,
             instance.isStarted(),
-            let sceneTree = Engine.getMainLoop() as? SceneTree,
-            sceneTree.root != nil
+            Engine.getMainLoop() is SceneTree
         else {
             return
         }
@@ -573,9 +572,10 @@ public class GodotApp: ObservableObject {
 
     private func ensureHostBridgeAttached() -> SwiftGodotHostBridge? {
         guard let instance, instance.isStarted() else { return nil }
-        guard let sceneTree = Engine.getMainLoop() as? SceneTree, let root = sceneTree.root else {
+        guard let sceneTree = Engine.getMainLoop() as? SceneTree else {
             return nil
         }
+        let root = sceneTree.root
 
         if let hostBridge, hostBridge.getParent() != nil {
             return hostBridge

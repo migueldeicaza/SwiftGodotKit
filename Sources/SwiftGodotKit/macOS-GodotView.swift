@@ -13,7 +13,7 @@ public class GodotView: NSView {
     static var locationMap: [UInt16: KeyLocation] = initLocationMap()
     
     public var renderingLayer: CAMetalLayer? = nil
-    internal var embedded: DisplayServerEmbedded?
+    internal var embedded: DisplayServerMacOSEmbedded?
     private var lastResizeSize: Vector2i?
     
     override init(frame: CGRect) {

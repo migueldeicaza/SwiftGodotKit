@@ -2,14 +2,12 @@
 import PackageDescription
 let macLibgodotTarget: Target = .binaryTarget(
     name: "mac_libgodot",
-    url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.5/libgodot-macos.xcframework.zip",
-    checksum: "e3768a09b3bd0ecbc5024912da5d133d68d81b7087e508f897255da79f041af9"
+    path: "build/mac/libgodot.xcframework"
 )
 
 let iosLibgodotTarget: Target = .binaryTarget(
     name: "ios_libgodot",
-    url: "https://github.com/migueldeicaza/godot/releases/download/v4.6.5/libgodot-ios.xcframework.zip",
-    checksum: "ce0dc9fc83afbca3d0860742de8fc2fa7db540d185c239dc6dde4969c62978e3"
+    path: "build/ios/libgodot.xcframework"
 )
 
 let package = Package(
@@ -26,8 +24,7 @@ let package = Package(
         .executable(name: "TrivialSample", targets: ["TrivialSample"]),
     ],
     dependencies: [
-        // This revision is tag 0.75.0.
-        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "48112dd50fffe01f0af78e445a16991ecdc6bc94"),
+        .package(path: "../SwiftGodot"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.

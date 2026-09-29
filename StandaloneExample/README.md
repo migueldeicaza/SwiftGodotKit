@@ -1,17 +1,16 @@
-This directory shows how you can use SwiftGodotKit in a standalone Swift Package.
+# Standalone example
 
-This directory was initially created like this:
+This Swift package uses the local SwiftGodot and SwiftGodotKit 4.7 checkouts.
+Build the libgodot XCFrameworks first from `SwiftGodotKit/scripts`:
 
-```bash
-swift package init -n StandaloneExample
+```sh
+make release-payloads
 ```
 
-And then Package.swift was extended to reference SwiftGodotKit and the sample placed.
+Then build and run the macOS example:
 
-To run, do this:
-
-```bash
-$ cp .build/*/*/libgodot.dylib .
-$ swift run
+```sh
+swift run --package-path StandaloneExample StandaloneExample
 ```
 
+The app creates its scene in Swift and does not need a game pack.

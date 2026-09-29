@@ -95,7 +95,7 @@ public class NSGodotWindow: GodotView {
         renderingLayer?.frame = self.bounds
         if inited {
             if embedded == nil {
-                embedded = DisplayServer.shared as? DisplayServerEmbedded
+                embedded = DisplayServer.shared as? DisplayServerMacOSEmbedded
             }
             resizeWindow ()
         }
@@ -140,7 +140,7 @@ public class NSGodotWindow: GodotView {
     }
 
     private func findNamedWindow(named: String) -> SwiftGodot.Window? {
-        (Engine.getMainLoop() as? SceneTree)?.root?.findChild(pattern: named, recursive: true, owned: false) as? SwiftGodot.Window
+        (Engine.getMainLoop() as? SceneTree)?.root.findChild(pattern: named, recursive: true, owned: false) as? SwiftGodot.Window
     }
 
     @discardableResult

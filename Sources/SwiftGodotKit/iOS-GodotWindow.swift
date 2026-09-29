@@ -307,12 +307,10 @@ public class UIGodotWindow: UIView {
     }
 
     private func findNamedWindow(named: String) -> Window? {
-        guard
-            let sceneTree = Engine.getMainLoop() as? SceneTree,
-            let root = sceneTree.root
-        else {
+        guard let sceneTree = Engine.getMainLoop() as? SceneTree else {
             return nil
         }
+        let root = sceneTree.root
         return root.findChild(pattern: named, recursive: true, owned: false) as? Window
     }
 
@@ -328,13 +326,11 @@ public class UIGodotWindow: UIView {
         }
 
         if ownsWindow {
-            guard
-                let sceneTree = Engine.getMainLoop() as? SceneTree,
-                let root = sceneTree.root
-            else {
+            guard let sceneTree = Engine.getMainLoop() as? SceneTree else {
                 Logger.Window.error("initGodotWindow: could not access scene tree root for new subwindow")
                 return false
             }
+            let root = sceneTree.root
             if window.getParent() == nil {
                 root.addChild(node: window)
             }
