@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 5 ]]; then
+    echo "usage: publish-libgodot-release TAG GODOT_DIR OUTPUT_DIR PACKAGE_FILE REPO" >&2
+    exit 2
+fi
+
+tag=$1
+godot_dir=$(cd "$2" && pwd)
+output_dir=$(cd "$3" && pwd)
+package_file=$4
+repo=$5
+
+if [[ ! $tag =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+    echo "Invalid release tag: $tag" >&2
+    exit 2
+fi
+
+mac_zip="$output_dir/mac/libgodot-macos.xcframework.zip"
+ios_zip="$output_dir/ios/libgodot-ios.xcframework.zip"
+for file in "$mac_zip" "$ios_zip" "$package_file"; do
+    if [[ ! -f $file ]]; then
+        echo "Missing release input: $file" >&2
+        exit 1
+    fi
+done
+
+godot_sha=$(git -C "$godot_dir" rev-parse HEAD)
+gh api "repos/$repo/commits/$godot_sha" --jq .sha >/dev/null
+mac_checksum=$(swift package compute-checksum "$mac_zip")
+ios_checksum=$(swift package compute-checksum "$ios_zip")
+mac_url="https://github.com/$repo/releases/download/$tag/libgodot-macos.xcframework.zip"
+ios_url="https://github.com/$repo/releases/download/$tag/libgodot-ios.xcframework.zip"
+
+echo "Godot commit: $godot_sha"
+echo "macOS checksum: $mac_checksum"
+echo "iOS checksum: $ios_checksum"
+
+manifest_candidate=$(mktemp)
+temporary_notes=""
+cleanup() {
+    rm -f "$manifest_candidate"
+    if [[ -n $temporary_notes ]]; then
+        rm -f "$temporary_notes"
+    fi
+}
+trap cleanup EXIT
+
+python3 - "$package_file" "$manifest_candidate" "$mac_url" "$mac_checksum" "$ios_url" "$ios_checksum" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+source = Path(sys.argv[1]).read_text()
+targets = (
+    ("macLibgodotTarget", "mac_libgodot", sys.argv[3], sys.argv[4]),
+    ("iosLibgodotTarget", "ios_libgodot", sys.argv[5], sys.argv[6]),
+)
+for variable, name, url, checksum in targets:
+    pattern = re.compile(
+        rf'(let {variable}: Target = \.binaryTarget\(\s*name: "{name}",\s*)'
+        r'(?:path: "[^"]+"|url: "[^"]+",\s*checksum: "[^"]+")'
+    )
+    source, count = pattern.subn(
+        lambda match: match.group(1) + f'url: "{url}",\n    checksum: "{checksum}"',
+        source,
+    )
+    if count != 1:
+        raise SystemExit(f"Expected one {name} binary target, found {count}")
+Path(sys.argv[2]).write_text(source)
+PY
+
+if [[ ${PUBLISH_DRY_RUN:-0} == 1 ]]; then
+    echo "Dry run: would create $tag in $repo and update $package_file"
+    diff -u "$package_file" "$manifest_candidate" || true
+    exit 0
+fi
+
+notes_file=${RELEASE_NOTES_FILE:-}
+if [[ -z $notes_file ]]; then
+    temporary_notes=$(mktemp)
+    notes_file=$temporary_notes
+    cat > "$notes_file" <<EOF
+SwiftGodotKit Apple libgodot payloads built from Godot commit $godot_sha.
+
+- macOS arm64 and x86_64 XCFramework (SHA-256: $mac_checksum)
+- iOS arm64 device and arm64/x86_64 simulator XCFramework (SHA-256: $ios_checksum)
+EOF
+elif [[ ! -f $notes_file ]]; then
+    echo "Missing release notes: $notes_file" >&2
+    exit 1
+fi
+
+release_flags=()
+if [[ ${RELEASE_PRERELEASE:-0} == 1 ]]; then
+    release_flags+=(--prerelease)
+fi
+
+gh release create "$tag" "$mac_zip" "$ios_zip" \
+    --repo "$repo" \
+    --target "$godot_sha" \
+    --title "$tag" \
+    --notes-file "$notes_file" \
+    "${release_flags[@]}"
+
+cat "$manifest_candidate" > "$package_file"
+
+echo "Updated $package_file with the published URLs and checksums."

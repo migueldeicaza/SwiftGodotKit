@@ -23,7 +23,7 @@ check-version:
 	@test -n "$(VERSION)" || (echo "usage: make publish-release VERSION=v4.7.x"; exit 1)
 
 publish-release: check-version
-	bash -x publish-libgodot-release "$(VERSION)" "$(GODOT)" "$(OUTPUT)" ../Package.swift "$(GODOT_REPO)"
+	bash publish-libgodot-release "$(VERSION)" "$(GODOT)" "$(OUTPUT)" ../Package.swift "$(GODOT_REPO)"
 
 release: check-version
 	$(MAKE) release-payloads SWIFTGODOT="$(SWIFTGODOT)" GODOT="$(GODOT)" OUTPUT="$(OUTPUT)"

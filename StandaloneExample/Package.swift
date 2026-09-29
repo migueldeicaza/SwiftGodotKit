@@ -15,7 +15,7 @@ let package = Package(
             targets: ["StandaloneExample"]),
     ],
     dependencies: [
-        .package(path: "../../SwiftGodot"),
+        .package(url: "https://github.com/migueldeicaza/SwiftGodot", revision: "f34e5796a517c104feb9a531a9814a826bda5b69"),
         .package(path: "..")
     ],
     targets: [

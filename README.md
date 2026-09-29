@@ -72,7 +72,14 @@ You can join our [Discussions on GitHub](https://github.com/migueldeicaza/SwiftG
 channel on the [Swift on Godot Slack server](https://join.slack.com/t/swiftongodot/shared_invite/zt-2aqygohvb-stSRGEAN~c3awuMwtaqCAA).
 
 
-## Local Godot 4.7 build
+## Godot 4.7 payloads
+
+This branch uses the
+[`v4.7.3-rc-swiftgodotkit.1`](https://github.com/migueldeicaza/godot/releases/tag/v4.7.3-rc-swiftgodotkit.1)
+macOS and iOS payloads. `Package.swift` pins the matching SwiftGodot commit.
+SwiftPM downloads the binaries when it builds the package.
+
+### Rebuild the payloads locally
 
 Keep these three checkouts next to each other:
 
@@ -80,8 +87,7 @@ Keep these three checkouts next to each other:
 - `SwiftGodot`: branch `swiftgodotkit-4.7`, based on `origin/unify/main`.
 - `SwiftGodotKit`: branch `swiftgodotkit-4.7`.
 
-The package uses the adjacent SwiftGodot checkout and local 4.7 XCFrameworks.
-Build the engine payloads before you build an app:
+To reproduce the payloads, build the engine archives and XCFrameworks:
 
 ```sh
 cd SwiftGodotKit/scripts
@@ -93,6 +99,8 @@ archives. It creates `build/mac/libgodot.xcframework` and
 `build/ios/libgodot.xcframework`, with zip files and checksums next to them.
 The process can take several minutes. If the five engine slices already exist
 for the current 4.7 commit, run `make package` to package them again.
+To test a new local engine build, change the two binary targets in
+`Package.swift` from `url` and `checksum` to these local XCFramework paths.
 
 You need Xcode command-line tools and `scons` in `PATH`. The default paths use
 the adjacent checkouts. You can set `SWIFTGODOT`, `GODOT`, and `OUTPUT` when you
@@ -110,21 +118,19 @@ make build-ios-simulator
 The sample pack script uses `/Applications/Godot-47.app`. Set `GODOT_APP` if
 you keep the Godot 4.7 editor at a different path.
 
-The local paths in `Package.swift` are for this workspace. Before a public
-release, push the matching Godot and SwiftGodot commits. Then run
-`make publish-release VERSION=<new tag>` from `scripts/`. This uploads the two
-zip files to the Godot release and replaces the binary target paths in
-`Package.swift` with release URLs and checksums. Pin the SwiftGodot commit
-that contains the matching custom 4.7 bindings before you release
-SwiftGodotKit. Use a new tag for each payload because SwiftPM caches the URL.
+For the next payload release, push the matching Godot and SwiftGodot commits.
+Then run `make publish-release VERSION=<new tag>` from `scripts/`. This uploads
+the two zip files to a Godot release and updates the binary URLs and checksums
+in `Package.swift`. Set `RELEASE_PRERELEASE=1` for a prerelease. Update the
+SwiftGodot revision if its bindings changed. Use a new tag for each payload
+because SwiftPM caches the URL.
 
-### How Users Consume A Release
+### Use the 4.7 branch
 
-After the 4.7 payloads are published and `Package.swift` points to them,
-users can add `SwiftGodotKit` through SwiftPM or Xcode:
+Add the current 4.7 branch through SwiftPM or Xcode:
 
 ```swift
-.package(url: "https://github.com/migueldeicaza/SwiftGodotKit", exact: "<SwiftGodotKit tag>")
+.package(url: "https://github.com/migueldeicaza/SwiftGodotKit", branch: "swiftgodotkit-4.7")
 ```
 
 and depend on the product:

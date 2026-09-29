@@ -1,11 +1,8 @@
 # Standalone example
 
-This Swift package uses the local SwiftGodot and SwiftGodotKit 4.7 checkouts.
-Build the libgodot XCFrameworks first from `SwiftGodotKit/scripts`:
-
-```sh
-make release-payloads
-```
+This Swift package uses the local SwiftGodotKit checkout and the matching
+published SwiftGodot 4.7 revision. SwiftGodotKit downloads the published
+libgodot XCFrameworks through SwiftPM.
 
 Then build and run the macOS example:
 
