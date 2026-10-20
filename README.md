@@ -38,6 +38,18 @@ instructions.
 
 Just reference this module from your Package.swift file or from Xcode.
 
+Use Swift 6.3 or later. The package uses Swift 5 language mode.
+SwiftPM supports Apple's prebuilt SwiftSyntax libraries. However, the pinned
+SwiftGodot revision also uses SwiftSyntax in its code generators. Builds with
+Swift 6.4 still compile SwiftSyntax from source. The tools version change
+alone does not remove this build step.
+
+To build the macOS sample:
+
+```sh
+swift build --product TrivialSample
+```
+
 ## Sample
 
 A simple SwiftUI API is provided.

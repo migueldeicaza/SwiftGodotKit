@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.3
 import PackageDescription
 let macLibgodotTarget: Target = .binaryTarget(
     name: "mac_libgodot",
@@ -64,5 +64,6 @@ let package = Package(
         .systemLibrary(
             name: "libgodot"
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v5]
 )
