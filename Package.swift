@@ -28,7 +28,7 @@ let package = Package(
     dependencies: [
         // Prebuilt SwiftGodot XCFrameworks, so clients do not compile SwiftGodot
         // or swift-syntax. Produced by SwiftGodot's binaries.yml release workflow.
-        .package(url: "https://github.com/migueldeicaza/SwiftGodotBinary", exact: "0.99.1"),
+        .package(url: "https://github.com/migueldeicaza/SwiftGodotBinary", exact: "0.99.2"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
