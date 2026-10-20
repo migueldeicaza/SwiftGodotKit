@@ -50,6 +50,38 @@ To build the macOS sample:
 swift build --product TrivialSample
 ```
 
+### Faster builds with the `binary` branch
+
+SwiftGodot and SwiftSyntax can take a long time to compile. The `binary`
+branch uses [SwiftGodotBinary](https://github.com/migueldeicaza/SwiftGodotBinary)
+instead. That package contains prebuilt SwiftGodot XCFrameworks for macOS and
+iOS, so SwiftPM does not compile SwiftGodot or SwiftSyntax. The API is the same
+as on `main`.
+
+To use it, reference the `binary` branch:
+
+```swift
+.package(url: "https://github.com/migueldeicaza/SwiftGodotKit", branch: "binary")
+```
+
+If your code also imports `SwiftGodot`, get it from SwiftGodotBinary. Do not
+add the SwiftGodot source package, because then your app gets two different
+copies of SwiftGodot:
+
+```swift
+.product(name: "SwiftGodot", package: "SwiftGodotBinary")
+```
+
+If you change an existing project from `main` to `binary`, do a clean build
+first. In Xcode, select Product ▸ Clean Build Folder, or delete the project
+folder in DerivedData. With SwiftPM, run `swift package clean`. If you do not,
+the linker can use the old source-built `SwiftGodot.framework`, and the app
+stops at launch with this error:
+
+```
+dyld: Symbol not found: _$s17SwiftGodotRuntime7WrappedCMn
+```
+
 ## Sample
 
 A simple SwiftUI API is provided.
