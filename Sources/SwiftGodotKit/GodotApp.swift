@@ -74,14 +74,10 @@ public class GodotApp: ObservableObject {
     @ObservationIgnored var pendingLayout = Set<TTGodotAppView>()
     @ObservationIgnored var pendingWindow = Set<TTGodotWindow>()
 
-    #if os(macOS)
-    internal let appDelegate: GodotAppDelegate
-    #endif
-
     #if os(iOS)
     @ObservationIgnored var touches: [UITouch?] = []
-    @ObservationIgnored private var lifecycleObservers: [NSObjectProtocol] = []
     #endif
+    @ObservationIgnored private var lifecycleObservers: [NSObjectProtocol] = []
     
     /// The Godot instance for this host, if it was successfully created
     @ObservationIgnored public var instance: GodotInstance?
@@ -130,13 +126,8 @@ public class GodotApp: ObservableObject {
         self.displayDriver = displayDriver
         self.extraArgs = extraArgs
         
-        #if os(macOS)
-        self.appDelegate = GodotAppDelegate()
-        self.appDelegate.app = self
-        #endif
-
-        #if os(iOS)
         registerLifecycleObservers()
+        #if os(iOS)
         switch UIApplication.shared.applicationState {
         case .active:
             lifecycleHasFocus = true
@@ -155,12 +146,10 @@ public class GodotApp: ObservableObject {
     }
 
     deinit {
-        #if os(iOS)
         for observer in lifecycleObservers {
             NotificationCenter.default.removeObserver(observer)
         }
         lifecycleObservers.removeAll()
-        #endif
     }
 
     public func startPending() {
@@ -234,7 +223,17 @@ public class GodotApp: ObservableObject {
 
         ensureHostBridgeTypeRegistration()
         
+#if os(macOS)
+        // Creating the instance installs Godot's own GodotApplicationDelegate on
+        // NSApp, which expects the regular macOS display server. Put the host
+        // application's delegate back; focus changes come from the notification
+        // observers registered in init.
+        let hostDelegate = NSApplication.shared.delegate
+#endif
         instance = GodotInstance.create(args: args)
+#if os(macOS)
+        NSApplication.shared.delegate = hostDelegate
+#endif
         guard let instance else {
             Logger.App.error("GodotApp.start failed to create GodotInstance")
             emitRuntimeEvent(
@@ -250,10 +249,6 @@ public class GodotApp: ObservableObject {
         }
         isPaused = false
         Logger.App.info("GodotApp.start created instance. isStarted=\(instance.isStarted())")
-        
-#if os(macOS)
-        NSApplication.shared.delegate = appDelegate
-#endif
 
         startPending()
         pollBridgeAndReadiness()
@@ -366,6 +361,27 @@ public class GodotApp: ObservableObject {
         }
 
         lifecycleObservers = [didBecomeActive, willResignActive, didEnterBackground, willEnterForeground]
+    }
+    #elseif os(macOS)
+    private func registerLifecycleObservers() {
+        let center = NotificationCenter.default
+        let didBecomeActive = center.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applicationDidBecomeActive()
+        }
+
+        let didResignActive = center.addObserver(
+            forName: NSApplication.didResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.applicationDidResignActive()
+        }
+
+        lifecycleObservers = [didBecomeActive, didResignActive]
     }
     #endif
 
